@@ -1,9 +1,8 @@
-
 import { useState } from 'react';
 import Navigation from '@/components/Navigation';
 import MissionControl from '@/components/MissionControl';
 import LearningModule from '@/components/LearningModule';
-import RocketBuilder from '@/components/RocketBuilder';
+import DragDropRocketBuilder from '@/components/DragDropRocketBuilder';
 import RocketSimulation from '@/components/RocketSimulation';
 
 interface RocketDesign {
@@ -51,7 +50,7 @@ const Index = () => {
         );
       case 'build':
         return (
-          <RocketBuilder 
+          <DragDropRocketBuilder 
             onSectionChange={setCurrentSection}
             onProgressUpdate={handleProgressUpdate}
             onRocketUpdate={handleRocketUpdate}
