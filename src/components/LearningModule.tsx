@@ -1,9 +1,10 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { ChevronRight, ChevronLeft, Rocket, Zap, Wind } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Rocket, Zap, Wind, BookOpen } from 'lucide-react';
+import Quiz from '@/components/Quiz';
+import { preQuizQuestions, postQuizQuestions } from '@/data/quizData';
 
 interface LearningModuleProps {
   onSectionChange: (section: string) => void;
@@ -12,7 +13,12 @@ interface LearningModuleProps {
 }
 
 const LearningModule = ({ onSectionChange, progress, onProgressUpdate }: LearningModuleProps) => {
+  const [currentStep, setCurrentStep] = useState('pre-quiz');
   const [currentLesson, setCurrentLesson] = useState(0);
+  const [quizScores, setQuizScores] = useState<{
+    preQuiz?: { score: number; total: number };
+    postQuiz?: { score: number; total: number };
+  }>({});
 
   const lessons = [
     {
@@ -98,34 +104,146 @@ const LearningModule = ({ onSectionChange, progress, onProgressUpdate }: Learnin
     }
   ];
 
-  const currentLessonData = lessons[currentLesson];
-  const isCompleted = progress[currentLessonData.id];
+  const handlePreQuizComplete = (score: number, total: number) => {
+    setQuizScores(prev => ({ ...prev, preQuiz: { score, total } }));
+    setCurrentStep('lessons');
+  };
 
-  const handleNext = () => {
+  const handlePostQuizComplete = (score: number, total: number) => {
+    setQuizScores(prev => ({ ...prev, postQuiz: { score, total } }));
+    onProgressUpdate('lesson1', true);
+    onProgressUpdate('lesson2', true);
+    onProgressUpdate('lesson3', true);
+    setCurrentStep('complete');
+  };
+
+  const handleLessonComplete = () => {
+    const currentLessonData = lessons[currentLesson];
+    onProgressUpdate(currentLessonData.id, true);
+    
     if (currentLesson < lessons.length - 1) {
       setCurrentLesson(currentLesson + 1);
+    } else {
+      setCurrentStep('post-quiz');
     }
   };
 
-  const handlePrevious = () => {
-    if (currentLesson > 0) {
-      setCurrentLesson(currentLesson - 1);
-    }
+  const renderPreQuiz = () => (
+    <div>
+      <div className="mb-8 text-center">
+        <BookOpen className="h-16 w-16 text-primary mx-auto mb-4" />
+        <h2 className="text-2xl font-bold mb-2">Pre-Learning Assessment</h2>
+        <p className="text-muted-foreground">
+          Let's see what you already know about rockets! Don't worry - this helps us understand your starting point.
+        </p>
+      </div>
+      <Quiz
+        title="Pre-Learning Quiz"
+        description="Test your current knowledge about rockets"
+        questions={preQuizQuestions}
+        onComplete={handlePreQuizComplete}
+      />
+    </div>
+  );
+
+  const renderPostQuiz = () => (
+    <div>
+      <div className="mb-8 text-center">
+        <BookOpen className="h-16 w-16 text-primary mx-auto mb-4" />
+        <h2 className="text-2xl font-bold mb-2">Post-Learning Assessment</h2>
+        <p className="text-muted-foreground">
+          Time to show what you've learned! Let's see how much your knowledge has improved.
+        </p>
+      </div>
+      <Quiz
+        title="Post-Learning Quiz"
+        description="Test your knowledge after completing the lessons"
+        questions={postQuizQuestions}
+        onComplete={handlePostQuizComplete}
+      />
+    </div>
+  );
+
+  const renderComplete = () => {
+    const preScore = quizScores.preQuiz;
+    const postScore = quizScores.postQuiz;
+    const improvement = preScore && postScore ? 
+      ((postScore.score / postScore.total) - (preScore.score / preScore.total)) * 100 : 0;
+
+    return (
+      <Card className="max-w-4xl mx-auto">
+        <CardHeader className="text-center">
+          <CardTitle className="text-3xl">🎉 Congratulations!</CardTitle>
+          <CardDescription>You've completed the Space Academy curriculum!</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid md:grid-cols-2 gap-6">
+            {preScore && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Pre-Learning Score</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-muted-foreground">
+                    {Math.round((preScore.score / preScore.total) * 100)}%
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {preScore.score}/{preScore.total} correct
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+            
+            {postScore && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Post-Learning Score</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-accent">
+                    {Math.round((postScore.score / postScore.total) * 100)}%
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {postScore.score}/{postScore.total} correct
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {improvement > 0 && (
+            <Card className="bg-accent/10 border-accent">
+              <CardContent className="pt-6 text-center">
+                <div className="text-2xl font-bold text-accent mb-2">
+                  +{Math.round(improvement)}% Improvement!
+                </div>
+                <p className="text-sm">You've significantly increased your rocket knowledge!</p>
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="text-center">
+            <p className="mb-4">Ready to put your knowledge into action?</p>
+            <Button onClick={() => onSectionChange('build')} className="bg-accent hover:bg-accent/90">
+              Go to Rocket Workshop
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
   };
 
-  const handleComplete = () => {
-    onProgressUpdate(currentLessonData.id, true);
-  };
+  const renderLessons = () => {
+    const currentLessonData = lessons[currentLesson];
+    const isCompleted = progress[currentLessonData.id];
+    const progressPercentage = ((currentLesson + 1) / lessons.length) * 100;
 
-  const progressPercentage = ((currentLesson + 1) / lessons.length) * 100;
-
-  return (
-    <div className="min-h-screen p-6">
-      <div className="max-w-4xl mx-auto">
+    return (
+      <div>
         {/* Progress Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-3xl font-bold">Space Academy</h1>
+            <h1 className="text-3xl font-bold">Space Academy Lessons</h1>
             <Button variant="outline" onClick={() => onSectionChange('home')}>
               Back to Mission Control
             </Button>
@@ -177,7 +295,7 @@ const LearningModule = ({ onSectionChange, progress, onProgressUpdate }: Learnin
         <div className="flex justify-between items-center">
           <Button 
             variant="outline" 
-            onClick={handlePrevious}
+            onClick={() => setCurrentLesson(Math.max(0, currentLesson - 1))}
             disabled={currentLesson === 0}
           >
             <ChevronLeft className="h-4 w-4 mr-2" />
@@ -185,41 +303,30 @@ const LearningModule = ({ onSectionChange, progress, onProgressUpdate }: Learnin
           </Button>
 
           <div className="flex gap-2">
-            {!isCompleted && (
-              <Button onClick={handleComplete} variant="secondary">
-                Mark Complete
-              </Button>
-            )}
-            {isCompleted && (
-              <span className="flex items-center text-accent font-medium">
-                ✓ Completed
-              </span>
-            )}
+            <Button onClick={handleLessonComplete} variant="secondary">
+              {currentLesson === lessons.length - 1 ? 'Complete Lessons' : 'Next Lesson'}
+            </Button>
           </div>
 
           <Button 
-            onClick={handleNext}
+            onClick={() => setCurrentLesson(Math.min(lessons.length - 1, currentLesson + 1))}
             disabled={currentLesson === lessons.length - 1}
           >
-            Next
+            Skip
             <ChevronRight className="h-4 w-4 ml-2" />
           </Button>
         </div>
+      </div>
+    );
+  };
 
-        {/* Completion Actions */}
-        {currentLesson === lessons.length - 1 && isCompleted && (
-          <Card className="mt-8 bg-accent/10 border-accent">
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <h3 className="text-xl font-bold mb-2">🎉 Congratulations!</h3>
-                <p className="mb-4">You've completed all the lessons! Ready to build your first rocket?</p>
-                <Button onClick={() => onSectionChange('build')} className="bg-accent hover:bg-accent/90">
-                  Go to Rocket Workshop
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+  return (
+    <div className="min-h-screen p-6">
+      <div className="max-w-4xl mx-auto">
+        {currentStep === 'pre-quiz' && renderPreQuiz()}
+        {currentStep === 'lessons' && renderLessons()}
+        {currentStep === 'post-quiz' && renderPostQuiz()}
+        {currentStep === 'complete' && renderComplete()}
       </div>
     </div>
   );
