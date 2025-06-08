@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -21,6 +20,8 @@ interface SimulationData {
   altitude: number;
   velocity: number;
   acceleration: number;
+  horizontalPosition: number;
+  horizontalVelocity: number;
 }
 
 interface RocketSimulationProps {
@@ -57,43 +58,81 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
 
     const dt = 0.1; // Time step in seconds
     const burnTime = 2.0; // Engine burn time
-    const gravity = 9.81;
-    const airDensity = 1.225;
+    const gravity = 9.81; // m/s²
+    const seaLevelAirDensity = 1.225; // kg/m³
+    const temperatureLapseRate = 0.0065; // K/m
+    const seaLevelTemperature = 288.15; // K (15°C)
+    const gasConstant = 287.05; // J/(kg·K)
+    const windSpeed = 5; // m/s
+    const windDirection = Math.random() * 2 * Math.PI; // Random wind direction
     
     let time = 0;
     let altitude = 0;
     let velocity = 0;
+    let horizontalVelocity = 0;
+    let horizontalPosition = 0;
     const data: SimulationData[] = [];
 
     const simulate = () => {
-      let mass = rocket.totalMass / 1000; // Convert to kg
-      let thrust = time < burnTime ? rocket.thrust : 0;
-      
+      // Calculate air density based on altitude
+      const temperature = seaLevelTemperature - temperatureLapseRate * altitude;
+      const airDensity = seaLevelAirDensity * Math.exp(-altitude / 8500);
+
+      // Calculate mass change during burn
+      const initialMass = rocket.totalMass / 1000; // Convert to kg
+      const propellantMass = rocket.engine.mass * 0.7 / 1000; // Assume 70% of engine mass is propellant
+      const massFlowRate = propellantMass / burnTime;
+      const currentMass = time < burnTime 
+        ? initialMass - massFlowRate * time 
+        : initialMass - propellantMass;
+
+      // Calculate thrust curve (simplified)
+      const thrust = time < burnTime 
+        ? rocket.thrust * (1 - Math.pow(time / burnTime, 2)) // Decreasing thrust curve
+        : 0;
+
       // Calculate forces
-      const weight = mass * gravity;
+      const weight = currentMass * gravity;
+      
+      // More accurate drag calculation
       const dragCoeff = rocket.totalDrag * 0.01;
-      const area = Math.PI * Math.pow(rocket.body.diameter / 2000, 2); // Convert to m²
-      const drag = 0.5 * airDensity * velocity * velocity * dragCoeff * area;
+      const crossSectionalArea = Math.PI * Math.pow(rocket.body.diameter / 2000, 2); // Convert to m²
+      const relativeVelocity = Math.sqrt(Math.pow(velocity, 2) + Math.pow(horizontalVelocity, 2));
+      const drag = 0.5 * airDensity * Math.pow(relativeVelocity, 2) * dragCoeff * crossSectionalArea;
       
-      // Net force and acceleration
-      const netForce = thrust - weight - drag;
-      const acceleration = netForce / mass;
+      // Calculate wind effects
+      const windForce = 0.5 * airDensity * Math.pow(windSpeed, 2) * crossSectionalArea * 0.1; // Simplified wind force
+      const windForceX = windForce * Math.cos(windDirection);
+      const windForceY = windForce * Math.sin(windDirection);
+
+      // Net forces
+      const netVerticalForce = thrust - weight - drag * (velocity / relativeVelocity) + windForceY;
+      const netHorizontalForce = -drag * (horizontalVelocity / relativeVelocity) + windForceX;
+
+      // Update velocities and positions
+      const verticalAcceleration = netVerticalForce / currentMass;
+      const horizontalAcceleration = netHorizontalForce / currentMass;
       
-      // Update velocity and position
-      velocity += acceleration * dt;
+      velocity += verticalAcceleration * dt;
+      horizontalVelocity += horizontalAcceleration * dt;
+      
       altitude += velocity * dt;
+      horizontalPosition += horizontalVelocity * dt;
       
       // Check if rocket has landed
       if (altitude < 0) {
         altitude = 0;
         velocity = 0;
+        horizontalVelocity = 0;
       }
       
       data.push({
         time,
         altitude,
         velocity: Math.max(0, velocity),
-        acceleration
+        acceleration: verticalAcceleration,
+        horizontalPosition,
+        horizontalVelocity
       });
       
       time += dt;
@@ -135,7 +174,7 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
   const maxVelocity = simulationData.length > 0 ? Math.max(...simulationData.map(d => d.velocity)) : 0;
   const flightTime = simulationData.length > 0 ? simulationData[simulationData.length - 1].time : 0;
 
-  const currentData = simulationData[currentStep] || { time: 0, altitude: 0, velocity: 0, acceleration: 0 };
+  const currentData = simulationData[currentStep] || { time: 0, altitude: 0, velocity: 0, acceleration: 0, horizontalPosition: 0, horizontalVelocity: 0 };
 
   const getPerformanceRating = () => {
     if (maxAltitude > 100) return { rating: 'Excellent', color: 'text-accent' };
@@ -179,10 +218,11 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
                 <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 w-8 h-2 bg-gray-600"></div>
                 
                 {/* Rocket */}
-                <div 
-                  className="absolute left-1/2 transform -translate-x-1/2 transition-all duration-100 ease-linear"
+                <div
+                  className="absolute transition-all duration-100 ease-linear"
                   style={{ 
                     bottom: `${64 + rocketPosition}px`,
+                    left: `calc(50% + ${currentData.horizontalPosition * 2}px)`,
                     transform: `translateX(-50%) ${isSimulating ? 'scale(0.8)' : 'scale(1)'}`
                   }}
                 >
@@ -201,11 +241,16 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
                   </div>
                 </div>
                 
-                {/* Altitude marker */}
+                {/* Altitude and position markers */}
                 {simulationData.length > 0 && (
-                  <div className="absolute top-4 left-4 bg-black/50 text-white px-2 py-1 rounded text-sm">
-                    Altitude: {currentData.altitude.toFixed(1)}m
-                  </div>
+                  <>
+                    <div className="absolute top-4 left-4 bg-black/50 text-white px-2 py-1 rounded text-sm">
+                      Altitude: {currentData.altitude.toFixed(1)}m
+                    </div>
+                    <div className="absolute top-4 right-4 bg-black/50 text-white px-2 py-1 rounded text-sm">
+                      Distance: {currentData.horizontalPosition.toFixed(1)}m
+                    </div>
+                  </>
                 )}
               </div>
             </CardContent>
@@ -256,6 +301,14 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
                 <div>
                   <div className="text-muted-foreground">Acceleration</div>
                   <div className="font-semibold">{currentData.acceleration.toFixed(1)} m/s²</div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground">Horizontal Speed</div>
+                  <div className="font-semibold">{currentData.horizontalVelocity.toFixed(1)} m/s</div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground">Wind Speed</div>
+                  <div className="font-semibold">5.0 m/s</div>
                 </div>
               </div>
             </CardContent>
