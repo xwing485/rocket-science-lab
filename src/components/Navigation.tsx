@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Rocket, BookOpen, Wrench, Play, Trophy, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -26,7 +25,7 @@ const Navigation = ({ currentSection, onSectionChange }: NavigationProps) => {
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center">
               <Rocket className="h-8 w-8 text-primary mr-2" />
-              <span className="text-xl font-bold text-foreground">Rocket Academy</span>
+              <span className="text-xl font-bold text-foreground">Academy</span>
             </div>
           </div>
 

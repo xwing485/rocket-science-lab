@@ -56,7 +56,8 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
     setRocketPosition(0);
     onProgressUpdate('simulationRun', true);
 
-    const dt = 0.1; // Time step in seconds
+    // Constants
+    const dt = 0.01; // Smaller time step for better accuracy
     const burnTime = 2.0; // Engine burn time
     const gravity = 9.81; // m/s²
     const seaLevelAirDensity = 1.225; // kg/m³
@@ -66,6 +67,13 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
     const windSpeed = 5; // m/s
     const windDirection = Math.random() * 2 * Math.PI; // Random wind direction
     
+    // Rocket parameters
+    const initialMass = rocket.totalMass / 1000; // Convert to kg
+    const propellantMass = rocket.engine.mass * 0.7 / 1000; // Assume 70% of engine mass is propellant
+    const massFlowRate = propellantMass / burnTime;
+    const crossSectionalArea = Math.PI * Math.pow(rocket.body.diameter / 2000, 2); // Convert to m²
+    
+    // Initialize simulation variables
     let time = 0;
     let altitude = 0;
     let velocity = 0;
@@ -74,48 +82,63 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
     const data: SimulationData[] = [];
 
     const simulate = () => {
-      // Calculate air density based on altitude
+      // Calculate air density based on altitude using barometric formula
       const temperature = seaLevelTemperature - temperatureLapseRate * altitude;
-      const airDensity = seaLevelAirDensity * Math.exp(-altitude / 8500);
+      const airDensity = seaLevelAirDensity * Math.pow(temperature / seaLevelTemperature, 4.26);
 
       // Calculate mass change during burn
-      const initialMass = rocket.totalMass / 1000; // Convert to kg
-      const propellantMass = rocket.engine.mass * 0.7 / 1000; // Assume 70% of engine mass is propellant
-      const massFlowRate = propellantMass / burnTime;
       const currentMass = time < burnTime 
         ? initialMass - massFlowRate * time 
         : initialMass - propellantMass;
 
-      // Calculate thrust curve (simplified)
+      // Calculate thrust curve (more realistic)
       const thrust = time < burnTime 
-        ? rocket.thrust * (1 - Math.pow(time / burnTime, 2)) // Decreasing thrust curve
+        ? rocket.thrust * 1000 * (1 - Math.pow(time / burnTime, 1.5)) // Convert to N and use more realistic curve
         : 0;
 
       // Calculate forces
       const weight = currentMass * gravity;
       
-      // More accurate drag calculation
-      const dragCoeff = rocket.totalDrag * 0.01;
-      const crossSectionalArea = Math.PI * Math.pow(rocket.body.diameter / 2000, 2); // Convert to m²
+      // More accurate drag calculation using Reynolds number
+      const kinematicViscosity = 1.5e-5; // m²/s
       const relativeVelocity = Math.sqrt(Math.pow(velocity, 2) + Math.pow(horizontalVelocity, 2));
+      const reynoldsNumber = relativeVelocity * rocket.body.diameter / 1000 / kinematicViscosity;
+      
+      // Base drag coefficient from rocket design
+      const baseDragCoeff = rocket.totalDrag * 0.01;
+      
+      // Adjust drag coefficient based on Reynolds number
+      let dragCoeff = baseDragCoeff;
+      if (reynoldsNumber < 1000) {
+        dragCoeff *= 1.5; // Laminar flow
+      } else if (reynoldsNumber < 100000) {
+        dragCoeff *= 1.2; // Transitional flow
+      }
+      
+      // Calculate drag force
       const drag = 0.5 * airDensity * Math.pow(relativeVelocity, 2) * dragCoeff * crossSectionalArea;
       
-      // Calculate wind effects
-      const windForce = 0.5 * airDensity * Math.pow(windSpeed, 2) * crossSectionalArea * 0.1; // Simplified wind force
+      // Calculate wind effects (more realistic)
+      const windForce = 0.5 * airDensity * Math.pow(windSpeed, 2) * crossSectionalArea * 0.2; // Increased wind effect
       const windForceX = windForce * Math.cos(windDirection);
       const windForceY = windForce * Math.sin(windDirection);
 
-      // Net forces
-      const netVerticalForce = thrust - weight - drag * (velocity / relativeVelocity) + windForceY;
-      const netHorizontalForce = -drag * (horizontalVelocity / relativeVelocity) + windForceX;
+      // Calculate stability effects
+      const stabilityFactor = rocket.stability > 1.5 ? 1 : 0.5; // Reduce forces if unstable
+      
+      // Net forces with stability consideration
+      const netVerticalForce = (thrust - weight - drag * (velocity / relativeVelocity) + windForceY) * stabilityFactor;
+      const netHorizontalForce = (-drag * (horizontalVelocity / relativeVelocity) + windForceX) * stabilityFactor;
 
-      // Update velocities and positions
+      // Update velocities and positions using improved Euler method
       const verticalAcceleration = netVerticalForce / currentMass;
       const horizontalAcceleration = netHorizontalForce / currentMass;
       
+      // Update velocities with improved accuracy
       velocity += verticalAcceleration * dt;
       horizontalVelocity += horizontalAcceleration * dt;
       
+      // Update positions
       altitude += velocity * dt;
       horizontalPosition += horizontalVelocity * dt;
       
@@ -137,8 +160,8 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
       
       time += dt;
       
-      // Continue simulation while rocket is above ground and time < 20s
-      if (altitude > 0 && time < 20) {
+      // Continue simulation while rocket is above ground and time < 30s
+      if (altitude > 0 && time < 30) {
         requestAnimationFrame(simulate);
       } else {
         setIsSimulating(false);

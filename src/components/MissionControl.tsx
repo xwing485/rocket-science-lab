@@ -1,4 +1,3 @@
-
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Rocket, BookOpen, Wrench, Play, Trophy, Star } from 'lucide-react';
@@ -45,7 +44,7 @@ const MissionControl = ({ onSectionChange, progress }: MissionControlProps) => {
             <Rocket className="h-24 w-24 text-primary mx-auto animate-float" />
           </div>
           <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-            Welcome to Rocket Academy
+            Welcome to Academy
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Blast off into the amazing world of rocket science! Learn how rockets work, 
