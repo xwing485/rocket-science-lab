@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +12,7 @@ interface RocketPart {
   drag: number;
   thrust?: number;
   stability?: number;
+  image?: string;
 }
 
 interface RocketBuilderProps {
@@ -37,7 +37,8 @@ const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: Ro
     type: 'nose',
     name: 'Cone Nose',
     mass: 10,
-    drag: 0.5
+    drag: 0.5,
+    image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=200&h=150&fit=crop'
   });
 
   const [selectedFins, setSelectedFins] = useState<RocketPart>({
@@ -45,7 +46,8 @@ const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: Ro
     name: 'Standard Fins',
     mass: 15,
     drag: 0.8,
-    stability: 2.0
+    stability: 2.0,
+    image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=200&h=150&fit=crop'
   });
 
   const [selectedEngine, setSelectedEngine] = useState<RocketPart>({
@@ -53,28 +55,89 @@ const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: Ro
     name: 'A8-3 Engine',
     mass: 24,
     drag: 0.1,
-    thrust: 2.5
+    thrust: 2.5,
+    image: 'https://images.unsplash.com/photo-1581090464777-f3220bbe1b8b?w=200&h=150&fit=crop'
   });
 
   const [bodyDiameter, setBodyDiameter] = useState([24]);
   const [bodyLength, setBodyLength] = useState([200]);
 
   const noseCones = [
-    { type: 'nose' as const, name: 'Cone Nose', mass: 10, drag: 0.5 },
-    { type: 'nose' as const, name: 'Ogive Nose', mass: 12, drag: 0.4 },
-    { type: 'nose' as const, name: 'Parabolic Nose', mass: 11, drag: 0.45 }
+    { 
+      type: 'nose' as const, 
+      name: 'Cone Nose', 
+      mass: 10, 
+      drag: 0.5,
+      image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=200&h=150&fit=crop'
+    },
+    { 
+      type: 'nose' as const, 
+      name: 'Ogive Nose', 
+      mass: 12, 
+      drag: 0.4,
+      image: 'https://images.unsplash.com/photo-1485833077593-4278bba3f11f?w=200&h=150&fit=crop'
+    },
+    { 
+      type: 'nose' as const, 
+      name: 'Parabolic Nose', 
+      mass: 11, 
+      drag: 0.45,
+      image: 'https://images.unsplash.com/photo-1469041797191-50ace28483c3?w=200&h=150&fit=crop'
+    }
   ];
 
   const finSets = [
-    { type: 'fins' as const, name: 'Standard Fins', mass: 15, drag: 0.8, stability: 2.0 },
-    { type: 'fins' as const, name: 'Large Fins', mass: 22, drag: 1.2, stability: 3.0 },
-    { type: 'fins' as const, name: 'Swept Fins', mass: 18, drag: 0.9, stability: 2.5 }
+    { 
+      type: 'fins' as const, 
+      name: 'Standard Fins', 
+      mass: 15, 
+      drag: 0.8, 
+      stability: 2.0,
+      image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=200&h=150&fit=crop'
+    },
+    { 
+      type: 'fins' as const, 
+      name: 'Large Fins', 
+      mass: 22, 
+      drag: 1.2, 
+      stability: 3.0,
+      image: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=200&h=150&fit=crop'
+    },
+    { 
+      type: 'fins' as const, 
+      name: 'Swept Fins', 
+      mass: 18, 
+      drag: 0.9, 
+      stability: 2.5,
+      image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=200&h=150&fit=crop'
+    }
   ];
 
   const engines = [
-    { type: 'engine' as const, name: 'A8-3 Engine', mass: 24, drag: 0.1, thrust: 2.5 },
-    { type: 'engine' as const, name: 'B6-4 Engine', mass: 28, drag: 0.1, thrust: 5.0 },
-    { type: 'engine' as const, name: 'C6-5 Engine', mass: 32, drag: 0.1, thrust: 10.0 }
+    { 
+      type: 'engine' as const, 
+      name: 'A8-3 Engine', 
+      mass: 24, 
+      drag: 0.1, 
+      thrust: 2.5,
+      image: 'https://images.unsplash.com/photo-1581090464777-f3220bbe1b8b?w=200&h=150&fit=crop'
+    },
+    { 
+      type: 'engine' as const, 
+      name: 'B6-4 Engine', 
+      mass: 28, 
+      drag: 0.1, 
+      thrust: 5.0,
+      image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=200&h=150&fit=crop'
+    },
+    { 
+      type: 'engine' as const, 
+      name: 'C6-5 Engine', 
+      mass: 32, 
+      drag: 0.1, 
+      thrust: 10.0,
+      image: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=200&h=150&fit=crop'
+    }
   ];
 
   const bodyMass = (bodyDiameter[0] * bodyLength[0]) / 1000; // Simplified mass calculation
@@ -129,11 +192,16 @@ const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: Ro
                     <Button
                       key={nose.name}
                       variant={selectedNose.name === nose.name ? "default" : "outline"}
-                      className="h-auto p-3 flex flex-col"
+                      className="h-auto p-3 flex flex-col space-y-2"
                       onClick={() => setSelectedNose(nose)}
                     >
-                      <div className="font-medium">{nose.name}</div>
-                      <div className="text-xs text-muted-foreground">
+                      <img 
+                        src={nose.image} 
+                        alt={nose.name}
+                        className="w-full h-20 object-cover rounded"
+                      />
+                      <div className="font-medium text-center">{nose.name}</div>
+                      <div className="text-xs text-muted-foreground text-center">
                         {nose.mass}g, {nose.drag} drag
                       </div>
                     </Button>
@@ -192,11 +260,16 @@ const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: Ro
                     <Button
                       key={fins.name}
                       variant={selectedFins.name === fins.name ? "default" : "outline"}
-                      className="h-auto p-3 flex flex-col"
+                      className="h-auto p-3 flex flex-col space-y-2"
                       onClick={() => setSelectedFins(fins)}
                     >
-                      <div className="font-medium">{fins.name}</div>
-                      <div className="text-xs text-muted-foreground">
+                      <img 
+                        src={fins.image} 
+                        alt={fins.name}
+                        className="w-full h-20 object-cover rounded"
+                      />
+                      <div className="font-medium text-center">{fins.name}</div>
+                      <div className="text-xs text-muted-foreground text-center">
                         {fins.mass}g, {fins.stability} stability
                       </div>
                     </Button>
@@ -220,11 +293,16 @@ const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: Ro
                     <Button
                       key={engine.name}
                       variant={selectedEngine.name === engine.name ? "default" : "outline"}
-                      className="h-auto p-3 flex flex-col"
+                      className="h-auto p-3 flex flex-col space-y-2"
                       onClick={() => setSelectedEngine(engine)}
                     >
-                      <div className="font-medium">{engine.name}</div>
-                      <div className="text-xs text-muted-foreground">
+                      <img 
+                        src={engine.image} 
+                        alt={engine.name}
+                        className="w-full h-20 object-cover rounded"
+                      />
+                      <div className="font-medium text-center">{engine.name}</div>
+                      <div className="text-xs text-muted-foreground text-center">
                         {engine.thrust}N thrust
                       </div>
                     </Button>
