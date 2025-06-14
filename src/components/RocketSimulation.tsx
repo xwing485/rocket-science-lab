@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Play, RotateCcw, TrendingUp, Clock } from 'lucide-react';
+import Rocket3DVisualization from './Rocket3DVisualization';
 
 interface RocketDesign {
   nose: { name: string; mass: number; drag: number };
@@ -236,84 +237,19 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6">
-          {/* Visualization Panel */}
+          {/* 3D Visualization Panel */}
           <Card className="lg:row-span-2">
             <CardHeader>
-              <CardTitle>Launch Visualization</CardTitle>
+              <CardTitle>3D Launch Visualization</CardTitle>
               <CardDescription>
-                Real-time rocket simulation
+                Interactive 3D rocket simulation - drag to rotate, scroll to zoom
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="relative h-[600px] bg-gradient-to-b from-blue-900 via-blue-700 to-green-500 rounded-lg overflow-hidden">
-                {/* Fixed altitude markers */}
-                <div className="absolute left-2 top-4 text-white text-xs font-semibold bg-black/30 px-2 py-1 rounded">
-                  400m
-                </div>
-                <div className="absolute left-2 top-1/4 text-white text-xs font-semibold bg-black/30 px-2 py-1 rounded">
-                  300m
-                </div>
-                <div className="absolute left-2 top-1/2 text-white text-xs font-semibold bg-black/30 px-2 py-1 rounded">
-                  200m
-                </div>
-                <div className="absolute left-2 top-3/4 text-white text-xs font-semibold bg-black/30 px-2 py-1 rounded">
-                  100m
-                </div>
-                <div className="absolute left-2 bottom-4 text-white text-xs font-semibold bg-black/30 px-2 py-1 rounded">
-                  0m
-                </div>
-                
-                {/* Sky background with static clouds */}
-                <div className="absolute inset-0 opacity-30">
-                  <div className="absolute w-16 h-8 bg-white rounded-full top-10 left-10"></div>
-                  <div className="absolute w-12 h-6 bg-white rounded-full top-20 right-16"></div>
-                  <div className="absolute w-20 h-10 bg-white rounded-full top-16 left-1/2"></div>
-                </div>
-                
-                {/* Ground */}
-                <div className="absolute w-full h-16 bg-green-600 bottom-0"></div>
-                
-                {/* Launch pad */}
-                <div className="absolute left-1/2 transform -translate-x-1/2 w-8 h-2 bg-gray-600 bottom-16"></div>
-                
-                {/* Rocket - positioned based on altitude with fixed scale */}
-                <div
-                  className="absolute transition-all duration-100 ease-linear"
-                  style={{ 
-                    bottom: `${16 + currentData.altitude * 1.5}px`,
-                    left: `calc(50% + ${currentData.horizontalPosition * 2}px)`,
-                    transform: `translateX(-50%)`
-                  }}
-                >
-                  <div className="relative">
-                    {/* Rocket body */}
-                    <div className="w-6 h-16 bg-gradient-to-b from-primary to-primary/70 rounded-t-full mx-auto"></div>
-                    <div className="w-4 h-12 bg-muted mx-auto"></div>
-                    <div className="w-8 h-3 bg-accent mx-auto"></div>
-                    
-                    {/* Flame effect during simulation */}
-                    {isSimulating && currentData.time < 2 && (
-                      <div className="absolute top-full left-1/2 transform -translate-x-1/2">
-                        <div className="w-3 h-8 bg-gradient-to-b from-red-500 to-yellow-400 rounded-b-full animate-pulse"></div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Altitude and position info overlay */}
-                {simulationData.length > 0 && (
-                  <>
-                    <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-2 rounded-lg text-sm font-semibold">
-                      <div>Altitude: {currentData.altitude.toFixed(1)}m</div>
-                      <div>Time: {currentData.time.toFixed(1)}s</div>
-                    </div>
-                    <div className="absolute top-4 right-4 bg-black/70 text-white px-3 py-2 rounded-lg text-sm font-semibold">
-                      <div>Distance: {currentData.horizontalPosition.toFixed(1)}m</div>
-                      <div>Velocity: {currentData.velocity.toFixed(1)} m/s</div>
-                    </div>
-                  </>
-                )}
-              </div>
+              <Rocket3DVisualization 
+                currentData={currentData}
+                isSimulating={isSimulating}
+              />
             </CardContent>
           </Card>
 
