@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
@@ -39,6 +38,15 @@ const CleanCylinder = React.forwardRef<any, any>((props, ref) => {
 
 const CleanSphere = React.forwardRef<any, any>((props, ref) => {
   const geometry = new THREE.SphereGeometry(props.args[0], props.args[1], props.args[2]);
+  return (
+    <mesh ref={ref} geometry={geometry} position={props.position}>
+      {props.children}
+    </mesh>
+  );
+});
+
+const CleanBox = React.forwardRef<any, any>((props, ref) => {
+  const geometry = new THREE.BoxGeometry(props.args[0], props.args[1], props.args[2]);
   return (
     <mesh ref={ref} geometry={geometry} position={props.position}>
       {props.children}
@@ -123,6 +131,44 @@ const Rocket3D = ({ currentData, isSimulating }: Rocket3DProps) => {
   );
 };
 
+const LaunchPad = () => {
+  return (
+    <group position={[0, -1.8, 0]}>
+      {/* Main platform */}
+      <CleanCylinder args={[2, 2, 0.2, 16]} position={[0, 0, 0]}>
+        <meshPhongMaterial color="#CCCCCC" />
+      </CleanCylinder>
+      
+      {/* Support legs */}
+      <CleanBox args={[0.15, 0.8, 0.15]} position={[1.5, -0.5, 1.5]}>
+        <meshPhongMaterial color="#999999" />
+      </CleanBox>
+      <CleanBox args={[0.15, 0.8, 0.15]} position={[-1.5, -0.5, 1.5]}>
+        <meshPhongMaterial color="#999999" />
+      </CleanBox>
+      <CleanBox args={[0.15, 0.8, 0.15]} position={[1.5, -0.5, -1.5]}>
+        <meshPhongMaterial color="#999999" />
+      </CleanBox>
+      <CleanBox args={[0.15, 0.8, 0.15]} position={[-1.5, -0.5, -1.5]}>
+        <meshPhongMaterial color="#999999" />
+      </CleanBox>
+      
+      {/* Central support tower */}
+      <CleanCylinder args={[0.1, 0.1, 1.5, 8]} position={[0, 0.65, 0]}>
+        <meshPhongMaterial color="#FF0000" />
+      </CleanCylinder>
+      
+      {/* Platform details */}
+      <CleanCylinder args={[0.05, 0.05, 0.25, 8]} position={[0.8, 0.22, 0]}>
+        <meshPhongMaterial color="#FFFF00" />
+      </CleanCylinder>
+      <CleanCylinder args={[0.05, 0.05, 0.25, 8]} position={[-0.8, 0.22, 0]}>
+        <meshPhongMaterial color="#FFFF00" />
+      </CleanCylinder>
+    </group>
+  );
+};
+
 const Ground = () => {
   const geometry = new THREE.PlaneGeometry(100, 100);
   return (
@@ -131,7 +177,7 @@ const Ground = () => {
       rotation={[-Math.PI / 2, 0, 0]}
       position={[0, -2, 0]}
     >
-      <meshLambertMaterial color="#8B7355" transparent opacity={0.8} />
+      <meshLambertMaterial color="#22C55E" />
     </mesh>
   );
 };
@@ -180,6 +226,7 @@ const Rocket3DVisualization = ({ currentData, isSimulating }: Rocket3DProps) => 
         <pointLight position={[0, 5, 0]} intensity={0.5} />
 
         <Rocket3D currentData={currentData} isSimulating={isSimulating} />
+        <LaunchPad />
         <Ground />
         <Clouds />
 
