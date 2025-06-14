@@ -206,7 +206,12 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
           }
           
           const currentData = simulationData[next];
-          setRocketPosition(Math.min(currentData.altitude * 2, 300)); // Scale for visualization
+          // Fixed scale: make the visualization area represent 0-200m altitude
+          // Container height is 384px (h-96), ground takes 64px, so we have 320px for flight
+          const visualizationHeight = 320; // pixels available for rocket flight
+          const maxVisualizationAltitude = 200; // meters
+          const scaledPosition = Math.min((currentData.altitude / maxVisualizationAltitude) * visualizationHeight, visualizationHeight);
+          setRocketPosition(scaledPosition);
           
           return next;
         });
@@ -246,10 +251,17 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
           <Card className="lg:row-span-2">
             <CardHeader>
               <CardTitle>Launch Visualization</CardTitle>
-              <CardDescription>Watch your rocket soar!</CardDescription>
+              <CardDescription>Watch your rocket soar! (0-200m scale)</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="relative h-96 bg-gradient-to-b from-blue-900 via-blue-700 to-green-500 rounded-lg overflow-hidden">
+                {/* Altitude markers */}
+                <div className="absolute left-2 top-4 text-white text-xs">200m</div>
+                <div className="absolute left-2 top-1/4 text-white text-xs">150m</div>
+                <div className="absolute left-2 top-1/2 text-white text-xs">100m</div>
+                <div className="absolute left-2 top-3/4 text-white text-xs">50m</div>
+                <div className="absolute left-2 bottom-20 text-white text-xs">0m</div>
+                
                 {/* Sky background with clouds */}
                 <div className="absolute inset-0 opacity-30">
                   <div className="absolute top-10 left-10 w-16 h-8 bg-white rounded-full"></div>
