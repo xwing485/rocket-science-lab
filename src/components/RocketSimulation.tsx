@@ -34,7 +34,7 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationData, setSimulationData] = useState<SimulationData[]>([]);
   const [currentStep, setCurrentStep] = useState(0);
-  const [rocketPosition, setRocketPosition] = useState(0);
+  const [cameraOffset, setCameraOffset] = useState(0);
 
   // Default rocket if none provided
   const defaultRocket: RocketDesign = {
@@ -206,12 +206,18 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
           }
           
           const currentData = simulationData[next];
-          // Fixed scale: make the visualization area represent 0-200m altitude
-          // Container height is 384px (h-96), ground takes 64px, so we have 320px for flight
-          const visualizationHeight = 320; // pixels available for rocket flight
-          const maxVisualizationAltitude = 200; // meters
-          const scaledPosition = Math.min((currentData.altitude / maxVisualizationAltitude) * visualizationHeight, visualizationHeight);
-          setRocketPosition(scaledPosition);
+          
+          // Dynamic camera system - camera follows rocket when it gets high enough
+          const followThreshold = 50; // Start following after 50m
+          const viewportHeight = 400; // Height of the visualization area
+          
+          if (currentData.altitude > followThreshold) {
+            // Camera follows rocket, keeping it in the center-bottom portion of the view
+            const targetCameraOffset = currentData.altitude - followThreshold;
+            setCameraOffset(targetCameraOffset);
+          } else {
+            setCameraOffset(0);
+          }
           
           return next;
         });
@@ -251,35 +257,75 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
           <Card className="lg:row-span-2">
             <CardHeader>
               <CardTitle>Launch Visualization</CardTitle>
-              <CardDescription>Watch your rocket soar! (0-200m scale)</CardDescription>
+              <CardDescription>
+                Dynamic camera follows your rocket! View range: {Math.round(cameraOffset)}m - {Math.round(cameraOffset + 400)}m
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="relative h-96 bg-gradient-to-b from-blue-900 via-blue-700 to-green-500 rounded-lg overflow-hidden">
-                {/* Altitude markers */}
-                <div className="absolute left-2 top-4 text-white text-xs">200m</div>
-                <div className="absolute left-2 top-1/4 text-white text-xs">150m</div>
-                <div className="absolute left-2 top-1/2 text-white text-xs">100m</div>
-                <div className="absolute left-2 top-3/4 text-white text-xs">50m</div>
-                <div className="absolute left-2 bottom-20 text-white text-xs">0m</div>
-                
-                {/* Sky background with clouds */}
-                <div className="absolute inset-0 opacity-30">
-                  <div className="absolute top-10 left-10 w-16 h-8 bg-white rounded-full"></div>
-                  <div className="absolute top-20 right-16 w-12 h-6 bg-white rounded-full"></div>
-                  <div className="absolute top-16 left-1/2 w-20 h-10 bg-white rounded-full"></div>
+              <div className="relative h-[500px] bg-gradient-to-b from-blue-900 via-blue-700 to-green-500 rounded-lg overflow-hidden">
+                {/* Dynamic altitude markers based on camera position */}
+                <div className="absolute left-2 top-4 text-white text-xs font-semibold bg-black/30 px-2 py-1 rounded">
+                  {Math.round(cameraOffset + 400)}m
+                </div>
+                <div className="absolute left-2 top-1/4 text-white text-xs font-semibold bg-black/30 px-2 py-1 rounded">
+                  {Math.round(cameraOffset + 300)}m
+                </div>
+                <div className="absolute left-2 top-1/2 text-white text-xs font-semibold bg-black/30 px-2 py-1 rounded">
+                  {Math.round(cameraOffset + 200)}m
+                </div>
+                <div className="absolute left-2 top-3/4 text-white text-xs font-semibold bg-black/30 px-2 py-1 rounded">
+                  {Math.round(cameraOffset + 100)}m
+                </div>
+                <div className="absolute left-2 bottom-4 text-white text-xs font-semibold bg-black/30 px-2 py-1 rounded">
+                  {Math.round(cameraOffset)}m
                 </div>
                 
-                {/* Ground */}
-                <div className="absolute bottom-0 w-full h-16 bg-green-600"></div>
+                {/* Sky background with moving clouds based on camera */}
+                <div className="absolute inset-0 opacity-30">
+                  <div 
+                    className="absolute w-16 h-8 bg-white rounded-full transition-all duration-100"
+                    style={{ 
+                      top: `${10 + (cameraOffset * 0.1) % 100}px`,
+                      left: `${10 + (cameraOffset * 0.05) % 50}px`
+                    }}
+                  ></div>
+                  <div 
+                    className="absolute w-12 h-6 bg-white rounded-full transition-all duration-100"
+                    style={{ 
+                      top: `${80 + (cameraOffset * 0.15) % 100}px`,
+                      right: `${16 + (cameraOffset * 0.08) % 60}px`
+                    }}
+                  ></div>
+                  <div 
+                    className="absolute w-20 h-10 bg-white rounded-full transition-all duration-100"
+                    style={{ 
+                      top: `${60 + (cameraOffset * 0.12) % 80}px`,
+                      left: `${50 + (cameraOffset * 0.06) % 40}%`
+                    }}
+                  ></div>
+                </div>
                 
-                {/* Launch pad */}
-                <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 w-8 h-2 bg-gray-600"></div>
+                {/* Ground - only visible when camera is at low altitude */}
+                {cameraOffset < 50 && (
+                  <div 
+                    className="absolute w-full h-16 bg-green-600 transition-all duration-100"
+                    style={{ bottom: `${-cameraOffset * 8}px` }}
+                  ></div>
+                )}
                 
-                {/* Rocket */}
+                {/* Launch pad - visible when camera is near ground */}
+                {cameraOffset < 100 && (
+                  <div 
+                    className="absolute left-1/2 transform -translate-x-1/2 w-8 h-2 bg-gray-600 transition-all duration-100"
+                    style={{ bottom: `${16 - cameraOffset * 8}px` }}
+                  ></div>
+                )}
+                
+                {/* Rocket - positioned relative to camera view */}
                 <div
                   className="absolute transition-all duration-100 ease-linear"
                   style={{ 
-                    bottom: `${64 + rocketPosition}px`,
+                    bottom: `${Math.max(0, (currentData.altitude - cameraOffset) * 1.25)}px`,
                     left: `calc(50% + ${currentData.horizontalPosition * 2}px)`,
                     transform: `translateX(-50%) ${isSimulating ? 'scale(0.8)' : 'scale(1)'}`
                   }}
@@ -299,16 +345,25 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
                   </div>
                 </div>
                 
-                {/* Altitude and position markers */}
+                {/* Altitude and position info overlay */}
                 {simulationData.length > 0 && (
                   <>
-                    <div className="absolute top-4 left-4 bg-black/50 text-white px-2 py-1 rounded text-sm">
-                      Altitude: {currentData.altitude.toFixed(1)}m
+                    <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-2 rounded-lg text-sm font-semibold">
+                      <div>Altitude: {currentData.altitude.toFixed(1)}m</div>
+                      <div>Camera: {cameraOffset.toFixed(0)}m offset</div>
                     </div>
-                    <div className="absolute top-4 right-4 bg-black/50 text-white px-2 py-1 rounded text-sm">
-                      Distance: {currentData.horizontalPosition.toFixed(1)}m
+                    <div className="absolute top-4 right-4 bg-black/70 text-white px-3 py-2 rounded-lg text-sm font-semibold">
+                      <div>Distance: {currentData.horizontalPosition.toFixed(1)}m</div>
+                      <div>Velocity: {currentData.velocity.toFixed(1)} m/s</div>
                     </div>
                   </>
+                )}
+                
+                {/* Camera following indicator */}
+                {cameraOffset > 0 && (
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-yellow-500/80 text-black px-3 py-1 rounded-full text-xs font-bold">
+                    📹 Camera Following
+                  </div>
                 )}
               </div>
             </CardContent>
