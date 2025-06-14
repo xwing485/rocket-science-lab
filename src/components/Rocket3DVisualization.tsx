@@ -189,7 +189,7 @@ const Clouds = () => {
 
 const Rocket3DVisualization = ({ currentData, isSimulating }: Rocket3DProps) => {
   return (
-    <div className="w-full h-[600px] bg-gradient-to-b from-blue-900 to-blue-300 rounded-lg overflow-hidden">
+    <div className="w-full h-[600px] bg-gradient-to-b from-blue-900 to-blue-300 rounded-lg overflow-hidden relative">
       <Canvas
         camera={{ 
           position: [8, 5, 8], 
