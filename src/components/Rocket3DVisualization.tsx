@@ -50,95 +50,81 @@ const Rocket3D = ({ currentData, isSimulating }: Rocket3DProps) => {
       <Cone
         args={[0.15, 0.4, 8]}
         position={[0, 1, 0]}
-        material={new THREE.MeshPhongMaterial({ color: '#8B5CF6' })}
-      />
+      >
+        <meshPhongMaterial color="#8B5CF6" />
+      </Cone>
       
       {/* Main Body - Upper */}
       <Cylinder
         args={[0.15, 0.15, 0.8, 8]}
         position={[0, 0.2, 0]}
-        material={new THREE.MeshPhongMaterial({ color: '#FFFFFF' })}
-      />
+      >
+        <meshPhongMaterial color="#FFFFFF" />
+      </Cylinder>
       
       {/* Main Body - Lower */}
       <Cylinder
         args={[0.15, 0.15, 0.6, 8]}
         position={[0, -0.5, 0]}
-        material={new THREE.MeshPhongMaterial({ color: '#10B981' })}
-      />
+      >
+        <meshPhongMaterial color="#10B981" />
+      </Cylinder>
       
       {/* Side Boosters */}
       <Cylinder
         args={[0.08, 0.08, 1.2, 8]}
         position={[0.25, -0.2, 0]}
-        material={new THREE.MeshPhongMaterial({ color: '#10B981' })}
-      />
+      >
+        <meshPhongMaterial color="#10B981" />
+      </Cylinder>
       <Cylinder
         args={[0.08, 0.08, 1.2, 8]}
         position={[-0.25, -0.2, 0]}
-        material={new THREE.MeshPhongMaterial({ color: '#10B981' })}
-      />
+      >
+        <meshPhongMaterial color="#10B981" />
+      </Cylinder>
       
       {/* Booster Nozzles */}
       <Cylinder
         args={[0.06, 0.08, 0.2, 8]}
         position={[0.25, -0.9, 0]}
-        material={new THREE.MeshPhongMaterial({ color: '#F97316' })}
-      />
+      >
+        <meshPhongMaterial color="#F97316" />
+      </Cylinder>
       <Cylinder
         args={[0.06, 0.08, 0.2, 8]}
         position={[-0.25, -0.9, 0]}
-        material={new THREE.MeshPhongMaterial({ color: '#F97316' })}
-      />
+      >
+        <meshPhongMaterial color="#F97316" />
+      </Cylinder>
       
       {/* Main Engine Nozzle */}
       <Cylinder
         args={[0.1, 0.15, 0.3, 8]}
         position={[0, -1, 0]}
-        material={new THREE.MeshPhongMaterial({ color: '#F97316' })}
-      />
+      >
+        <meshPhongMaterial color="#F97316" />
+      </Cylinder>
       
       {/* Flame Effect */}
       <group ref={flameRef} position={[0, -1.3, 0]}>
-        <Cone
-          args={[0.1, 0.8, 8]}
-          material={new THREE.MeshBasicMaterial({ 
-            color: '#FFD700',
-            transparent: true,
-            opacity: 0.8
-          })}
-        />
-        <Cone
-          args={[0.06, 1.2, 8]}
-          material={new THREE.MeshBasicMaterial({ 
-            color: '#FF4500',
-            transparent: true,
-            opacity: 0.6
-          })}
-        />
+        <Cone args={[0.1, 0.8, 8]}>
+          <meshBasicMaterial color="#FFD700" transparent opacity={0.8} />
+        </Cone>
+        <Cone args={[0.06, 1.2, 8]}>
+          <meshBasicMaterial color="#FF4500" transparent opacity={0.6} />
+        </Cone>
       </group>
       
       {/* Side Booster Flames */}
       {isSimulating && currentData.time < 2 && (
         <>
-          <Cone
-            args={[0.04, 0.6, 8]}
-            position={[0.25, -1.1, 0]}
-            material={new THREE.MeshBasicMaterial({ 
-              color: '#FFD700',
-              transparent: true,
-              opacity: 0.7
-            })}
-          />
-          <Cone
-            args={[0.04, 0.6, 8]}
-            position={[-0.25, -1.1, 0]}
-            material={new THREE.MeshBasicMaterial({ 
-              color: '#FFD700',
-              transparent: true,
-              opacity: 0.7
-            })}
-          />
+          <Cone args={[0.04, 0.6, 8]} position={[0.25, -1.1, 0]}>
+            <meshBasicMaterial color="#FFD700" transparent opacity={0.7} />
+          </Cone>
+          <Cone args={[0.04, 0.6, 8]} position={[-0.25, -1.1, 0]}>
+            <meshBasicMaterial color="#FFD700" transparent opacity={0.7} />
+          </Cone>
         </>
       )}
     </group>
@@ -151,17 +137,14 @@ const Ground = () => {
       args={[100, 100]}
       rotation={[-Math.PI / 2, 0, 0]}
       position={[0, -2, 0]}
-      material={new THREE.MeshLambertMaterial({ 
-        color: '#8B7355',
-        transparent: true,
-        opacity: 0.8
-      })}
-    />
+    >
+      <meshLambertMaterial color="#8B7355" transparent opacity={0.8} />
+    </Plane>
   );
 };
 
 const Clouds = () => {
-  const positions = [
+  const positions: [number, number, number][] = [
     [10, 8, -20],
     [-15, 12, -25],
     [20, 15, -30],
@@ -172,16 +155,9 @@ const Clouds = () => {
   return (
     <>
       {positions.map((pos, index) => (
-        <Sphere
-          key={index}
-          args={[3, 16, 16]}
-          position={pos as [number, number, number]}
-          material={new THREE.MeshBasicMaterial({ 
-            color: '#FFFFFF',
-            transparent: true,
-            opacity: 0.6
-          })}
-        />
+        <Sphere key={index} args={[3, 16, 16]} position={pos}>
+          <meshBasicMaterial color="#FFFFFF" transparent opacity={0.6} />
+        </Sphere>
       ))}
     </>
   );
