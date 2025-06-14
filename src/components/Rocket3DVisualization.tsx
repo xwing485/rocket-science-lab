@@ -1,7 +1,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Sphere, Cylinder, Cone, Sky, Plane } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 
 interface SimulationData {
@@ -17,6 +17,34 @@ interface Rocket3DProps {
   currentData: SimulationData;
   isSimulating: boolean;
 }
+
+// Clean wrapper components to avoid attribute conflicts
+const CleanCone = React.forwardRef<any, any>((props, ref) => {
+  const geometry = new THREE.ConeGeometry(props.args[0], props.args[1], props.args[2]);
+  return (
+    <mesh ref={ref} geometry={geometry} position={props.position}>
+      {props.children}
+    </mesh>
+  );
+});
+
+const CleanCylinder = React.forwardRef<any, any>((props, ref) => {
+  const geometry = new THREE.CylinderGeometry(props.args[0], props.args[1], props.args[2], props.args[3]);
+  return (
+    <mesh ref={ref} geometry={geometry} position={props.position}>
+      {props.children}
+    </mesh>
+  );
+});
+
+const CleanSphere = React.forwardRef<any, any>((props, ref) => {
+  const geometry = new THREE.SphereGeometry(props.args[0], props.args[1], props.args[2]);
+  return (
+    <mesh ref={ref} geometry={geometry} position={props.position}>
+      {props.children}
+    </mesh>
+  );
+});
 
 const Rocket3D = ({ currentData, isSimulating }: Rocket3DProps) => {
   const rocketRef = useRef<THREE.Group>(null);
@@ -42,53 +70,53 @@ const Rocket3D = ({ currentData, isSimulating }: Rocket3DProps) => {
 
   return (
     <group ref={rocketRef}>
-      <Cone args={[0.15, 0.4, 8]} position={[0, 1, 0]}>
+      <CleanCone args={[0.15, 0.4, 8]} position={[0, 1, 0]}>
         <meshPhongMaterial color="#8B5CF6" />
-      </Cone>
+      </CleanCone>
       
-      <Cylinder args={[0.15, 0.15, 0.8, 8]} position={[0, 0.2, 0]}>
+      <CleanCylinder args={[0.15, 0.15, 0.8, 8]} position={[0, 0.2, 0]}>
         <meshPhongMaterial color="#FFFFFF" />
-      </Cylinder>
+      </CleanCylinder>
       
-      <Cylinder args={[0.15, 0.15, 0.6, 8]} position={[0, -0.5, 0]}>
+      <CleanCylinder args={[0.15, 0.15, 0.6, 8]} position={[0, -0.5, 0]}>
         <meshPhongMaterial color="#10B981" />
-      </Cylinder>
+      </CleanCylinder>
       
-      <Cylinder args={[0.08, 0.08, 1.2, 8]} position={[0.25, -0.2, 0]}>
+      <CleanCylinder args={[0.08, 0.08, 1.2, 8]} position={[0.25, -0.2, 0]}>
         <meshPhongMaterial color="#10B981" />
-      </Cylinder>
-      <Cylinder args={[0.08, 0.08, 1.2, 8]} position={[-0.25, -0.2, 0]}>
+      </CleanCylinder>
+      <CleanCylinder args={[0.08, 0.08, 1.2, 8]} position={[-0.25, -0.2, 0]}>
         <meshPhongMaterial color="#10B981" />
-      </Cylinder>
+      </CleanCylinder>
       
-      <Cylinder args={[0.06, 0.08, 0.2, 8]} position={[0.25, -0.9, 0]}>
+      <CleanCylinder args={[0.06, 0.08, 0.2, 8]} position={[0.25, -0.9, 0]}>
         <meshPhongMaterial color="#F97316" />
-      </Cylinder>
-      <Cylinder args={[0.06, 0.08, 0.2, 8]} position={[-0.25, -0.9, 0]}>
+      </CleanCylinder>
+      <CleanCylinder args={[0.06, 0.08, 0.2, 8]} position={[-0.25, -0.9, 0]}>
         <meshPhongMaterial color="#F97316" />
-      </Cylinder>
+      </CleanCylinder>
       
-      <Cylinder args={[0.1, 0.15, 0.3, 8]} position={[0, -1, 0]}>
+      <CleanCylinder args={[0.1, 0.15, 0.3, 8]} position={[0, -1, 0]}>
         <meshPhongMaterial color="#F97316" />
-      </Cylinder>
+      </CleanCylinder>
       
       <group ref={flameRef} position={[0, -1.3, 0]}>
-        <Cone args={[0.1, 0.8, 8]}>
+        <CleanCone args={[0.1, 0.8, 8]} position={[0, 0, 0]}>
           <meshBasicMaterial color="#FFD700" transparent opacity={0.8} />
-        </Cone>
-        <Cone args={[0.06, 1.2, 8]}>
+        </CleanCone>
+        <CleanCone args={[0.06, 1.2, 8]} position={[0, 0, 0]}>
           <meshBasicMaterial color="#FF4500" transparent opacity={0.6} />
-        </Cone>
+        </CleanCone>
       </group>
       
       {isSimulating && currentData.time < 2 && (
         <>
-          <Cone args={[0.04, 0.6, 8]} position={[0.25, -1.1, 0]}>
+          <CleanCone args={[0.04, 0.6, 8]} position={[0.25, -1.1, 0]}>
             <meshBasicMaterial color="#FFD700" transparent opacity={0.7} />
-          </Cone>
-          <Cone args={[0.04, 0.6, 8]} position={[-0.25, -1.1, 0]}>
+          </CleanCone>
+          <CleanCone args={[0.04, 0.6, 8]} position={[-0.25, -1.1, 0]}>
             <meshBasicMaterial color="#FFD700" transparent opacity={0.7} />
-          </Cone>
+          </CleanCone>
         </>
       )}
     </group>
@@ -96,14 +124,15 @@ const Rocket3D = ({ currentData, isSimulating }: Rocket3DProps) => {
 };
 
 const Ground = () => {
+  const geometry = new THREE.PlaneGeometry(100, 100);
   return (
-    <Plane
-      args={[100, 100]}
+    <mesh
+      geometry={geometry}
       rotation={[-Math.PI / 2, 0, 0]}
       position={[0, -2, 0]}
     >
       <meshLambertMaterial color="#8B7355" transparent opacity={0.8} />
-    </Plane>
+    </mesh>
   );
 };
 
@@ -119,9 +148,9 @@ const Clouds = () => {
   return (
     <>
       {positions.map((pos, index) => (
-        <Sphere key={index} args={[3, 16, 16]} position={pos}>
+        <CleanSphere key={index} args={[3, 16, 16]} position={pos}>
           <meshBasicMaterial color="#FFFFFF" transparent opacity={0.6} />
-        </Sphere>
+        </CleanSphere>
       ))}
     </>
   );
@@ -149,13 +178,6 @@ const Rocket3DVisualization = ({ currentData, isSimulating }: Rocket3DProps) => 
           shadow-mapSize-height={2048}
         />
         <pointLight position={[0, 5, 0]} intensity={0.5} />
-
-        <Sky
-          distance={450000}
-          sunPosition={[1, 1, 0]}
-          inclination={0}
-          azimuth={0.25}
-        />
 
         <Rocket3D currentData={currentData} isSimulating={isSimulating} />
         <Ground />
