@@ -5,9 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Rocket, Play, Eye, Trash2, Save } from 'lucide-react';
 
-interface RocketDesign {
-  id: string;
-  name: string;
+interface BasicRocketDesign {
   nose: { name: string; mass: number; drag: number };
   body: { diameter: number; length: number; mass: number };
   fins: { name: string; mass: number; drag: number; stability?: number };
@@ -16,18 +14,23 @@ interface RocketDesign {
   totalDrag: number;
   thrust: number;
   stability: number;
+}
+
+interface SavedRocketDesign extends BasicRocketDesign {
+  id: string;
+  name: string;
   savedAt: string;
 }
 
 interface SavedDesignsProps {
   onSectionChange: (section: string) => void;
-  onRocketUpdate: (rocket: RocketDesign) => void;
-  currentRocket?: RocketDesign | null;
+  onRocketUpdate: (rocket: BasicRocketDesign) => void;
+  currentRocket?: BasicRocketDesign | null;
 }
 
 const SavedDesigns = ({ onSectionChange, onRocketUpdate, currentRocket }: SavedDesignsProps) => {
-  const [savedDesigns, setSavedDesigns] = useState<RocketDesign[]>([]);
-  const [selectedDesign, setSelectedDesign] = useState<RocketDesign | null>(null);
+  const [savedDesigns, setSavedDesigns] = useState<SavedRocketDesign[]>([]);
+  const [selectedDesign, setSelectedDesign] = useState<SavedRocketDesign | null>(null);
 
   // Load saved designs from localStorage on component mount
   useEffect(() => {
@@ -48,7 +51,7 @@ const SavedDesigns = ({ onSectionChange, onRocketUpdate, currentRocket }: SavedD
     const designName = prompt('Enter a name for this design:');
     if (!designName) return;
 
-    const newDesign: RocketDesign = {
+    const newDesign: SavedRocketDesign = {
       ...currentRocket,
       id: Date.now().toString(),
       name: designName,
@@ -67,12 +70,12 @@ const SavedDesigns = ({ onSectionChange, onRocketUpdate, currentRocket }: SavedD
     }
   };
 
-  const launchDesign = (design: RocketDesign) => {
+  const launchDesign = (design: SavedRocketDesign) => {
     onRocketUpdate(design);
     onSectionChange('simulate');
   };
 
-  const getPerformanceRating = (design: RocketDesign) => {
+  const getPerformanceRating = (design: SavedRocketDesign) => {
     const thrustToWeight = design.thrust / (design.totalMass / 1000 * 9.81);
     if (thrustToWeight > 5) return { rating: 'Excellent', color: 'text-green-500' };
     if (thrustToWeight > 3) return { rating: 'Good', color: 'text-blue-500' };
