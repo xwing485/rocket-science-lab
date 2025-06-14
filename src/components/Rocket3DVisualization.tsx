@@ -60,8 +60,8 @@ const Rocket3D = ({ currentData, isSimulating }: Rocket3DProps) => {
 
   useFrame(() => {
     if (rocketRef.current) {
-      rocketRef.current.position.x = currentData.horizontalPosition / 20;
-      rocketRef.current.position.y = currentData.altitude / 20;
+      rocketRef.current.position.x = currentData.horizontalPosition / 50;
+      rocketRef.current.position.y = currentData.altitude / 50;
       rocketRef.current.position.z = 0;
       rocketRef.current.rotation.z = currentData.horizontalVelocity * 0.01;
     }

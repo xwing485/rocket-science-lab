@@ -205,7 +205,7 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
           }
           
           const currentData = simulationData[next];
-          setRocketPosition(Math.min(currentData.altitude * 2, 300)); // Scale for visualization
+          setRocketPosition(Math.min(currentData.altitude * 0.5, 300)); // Scale for visualization
           
           return next;
         });
