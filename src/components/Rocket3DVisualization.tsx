@@ -24,17 +24,13 @@ const Rocket3D = ({ currentData, isSimulating }: Rocket3DProps) => {
 
   useFrame(() => {
     if (rocketRef.current) {
-      // Position rocket based on simulation data
       rocketRef.current.position.x = currentData.horizontalPosition / 50;
       rocketRef.current.position.y = currentData.altitude / 50;
       rocketRef.current.position.z = 0;
-      
-      // Add slight rotation based on velocity for realism
       rocketRef.current.rotation.z = currentData.horizontalVelocity * 0.01;
     }
 
     if (flameRef.current) {
-      // Animate flame during burn time
       if (isSimulating && currentData.time < 2) {
         flameRef.current.visible = true;
         flameRef.current.scale.y = 1 + Math.sin(Date.now() * 0.01) * 0.3;
@@ -46,22 +42,18 @@ const Rocket3D = ({ currentData, isSimulating }: Rocket3DProps) => {
 
   return (
     <group ref={rocketRef}>
-      {/* Nose Cone */}
       <Cone args={[0.15, 0.4, 8]} position={[0, 1, 0]}>
         <meshPhongMaterial color="#8B5CF6" />
       </Cone>
       
-      {/* Main Body - Upper */}
       <Cylinder args={[0.15, 0.15, 0.8, 8]} position={[0, 0.2, 0]}>
         <meshPhongMaterial color="#FFFFFF" />
       </Cylinder>
       
-      {/* Main Body - Lower */}
       <Cylinder args={[0.15, 0.15, 0.6, 8]} position={[0, -0.5, 0]}>
         <meshPhongMaterial color="#10B981" />
       </Cylinder>
       
-      {/* Side Boosters */}
       <Cylinder args={[0.08, 0.08, 1.2, 8]} position={[0.25, -0.2, 0]}>
         <meshPhongMaterial color="#10B981" />
       </Cylinder>
@@ -69,7 +61,6 @@ const Rocket3D = ({ currentData, isSimulating }: Rocket3DProps) => {
         <meshPhongMaterial color="#10B981" />
       </Cylinder>
       
-      {/* Booster Nozzles */}
       <Cylinder args={[0.06, 0.08, 0.2, 8]} position={[0.25, -0.9, 0]}>
         <meshPhongMaterial color="#F97316" />
       </Cylinder>
@@ -77,12 +68,10 @@ const Rocket3D = ({ currentData, isSimulating }: Rocket3DProps) => {
         <meshPhongMaterial color="#F97316" />
       </Cylinder>
       
-      {/* Main Engine Nozzle */}
       <Cylinder args={[0.1, 0.15, 0.3, 8]} position={[0, -1, 0]}>
         <meshPhongMaterial color="#F97316" />
       </Cylinder>
       
-      {/* Flame Effect */}
       <group ref={flameRef} position={[0, -1.3, 0]}>
         <Cone args={[0.1, 0.8, 8]}>
           <meshBasicMaterial color="#FFD700" transparent opacity={0.8} />
@@ -92,7 +81,6 @@ const Rocket3D = ({ currentData, isSimulating }: Rocket3DProps) => {
         </Cone>
       </group>
       
-      {/* Side Booster Flames */}
       {isSimulating && currentData.time < 2 && (
         <>
           <Cone args={[0.04, 0.6, 8]} position={[0.25, -1.1, 0]}>
@@ -150,8 +138,8 @@ const Rocket3DVisualization = ({ currentData, isSimulating }: Rocket3DProps) => 
           far: 1000
         }}
         shadows
+        gl={{ preserveDrawingBuffer: true }}
       >
-        {/* Lighting */}
         <ambientLight intensity={0.4} />
         <directionalLight
           position={[10, 10, 5]}
@@ -162,7 +150,6 @@ const Rocket3DVisualization = ({ currentData, isSimulating }: Rocket3DProps) => 
         />
         <pointLight position={[0, 5, 0]} intensity={0.5} />
 
-        {/* Sky */}
         <Sky
           distance={450000}
           sunPosition={[1, 1, 0]}
@@ -170,15 +157,12 @@ const Rocket3DVisualization = ({ currentData, isSimulating }: Rocket3DProps) => 
           azimuth={0.25}
         />
 
-        {/* Scene Objects */}
         <Rocket3D currentData={currentData} isSimulating={isSimulating} />
         <Ground />
         <Clouds />
 
-        {/* Grid for reference */}
         <gridHelper args={[20, 20, '#666666', '#666666']} position={[0, -2, 0]} />
 
-        {/* Controls */}
         <OrbitControls
           enablePan={true}
           enableZoom={true}
@@ -190,7 +174,6 @@ const Rocket3DVisualization = ({ currentData, isSimulating }: Rocket3DProps) => 
         />
       </Canvas>
       
-      {/* 3D Info Overlay */}
       <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-2 rounded-lg text-sm font-semibold">
         <div>Altitude: {currentData.altitude.toFixed(1)}m</div>
         <div>Time: {currentData.time.toFixed(1)}s</div>
