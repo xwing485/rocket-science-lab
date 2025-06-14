@@ -64,7 +64,6 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
 
     setIsSimulating(true);
     setCurrentStep(0);
-    setRocketPosition(0);
     onProgressUpdate('simulationRun', true);
 
     // Constants
@@ -389,7 +388,6 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
                   onClick={() => {
                     setSimulationData([]);
                     setCurrentStep(0);
-                    setRocketPosition(0);
                   }}
                 >
                   <RotateCcw className="h-4 w-4" />
