@@ -1,5 +1,6 @@
+
 import { useState } from 'react';
-import { Rocket, BookOpen, Wrench, Play, Trophy, Menu, X } from 'lucide-react';
+import { Rocket, BookOpen, Wrench, Play, Trophy, Menu, X, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface NavigationProps {
@@ -15,6 +16,7 @@ const Navigation = ({ currentSection, onSectionChange }: NavigationProps) => {
     { id: 'learn', label: 'Learn', icon: BookOpen },
     { id: 'build', label: 'Build', icon: Wrench },
     { id: 'simulate', label: 'Launch', icon: Play },
+    { id: 'saved', label: 'Saved', icon: Save },
     { id: 'progress', label: 'Progress', icon: Trophy },
   ];
 

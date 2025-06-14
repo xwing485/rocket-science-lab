@@ -4,6 +4,7 @@ import MissionControl from '@/components/MissionControl';
 import LearningModule from '@/components/LearningModule';
 import DragDropRocketBuilder from '@/components/DragDropRocketBuilder';
 import RocketSimulation from '@/components/RocketSimulation';
+import SavedDesigns from '@/components/SavedDesigns';
 
 interface RocketDesign {
   nose: { name: string; mass: number; drag: number };
@@ -62,6 +63,14 @@ const Index = () => {
             onSectionChange={setCurrentSection}
             onProgressUpdate={handleProgressUpdate}
             rocketDesign={rocketDesign}
+          />
+        );
+      case 'saved':
+        return (
+          <SavedDesigns
+            onSectionChange={setCurrentSection}
+            onRocketUpdate={handleRocketUpdate}
+            currentRocket={rocketDesign}
           />
         );
       case 'progress':
