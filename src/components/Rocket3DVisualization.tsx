@@ -25,8 +25,8 @@ const Rocket3D = ({ currentData, isSimulating }: Rocket3DProps) => {
   useFrame(() => {
     if (rocketRef.current) {
       // Position rocket based on simulation data
-      rocketRef.current.position.x = currentData.horizontalPosition / 50; // Scale down for visualization
-      rocketRef.current.position.y = currentData.altitude / 50; // Scale down for visualization
+      rocketRef.current.position.x = currentData.horizontalPosition / 50;
+      rocketRef.current.position.y = currentData.altitude / 50;
       rocketRef.current.position.z = 0;
       
       // Add slight rotation based on velocity for realism
@@ -47,62 +47,38 @@ const Rocket3D = ({ currentData, isSimulating }: Rocket3DProps) => {
   return (
     <group ref={rocketRef}>
       {/* Nose Cone */}
-      <Cone
-        args={[0.15, 0.4, 8]}
-        position={[0, 1, 0]}
-      >
+      <Cone args={[0.15, 0.4, 8]} position={[0, 1, 0]}>
         <meshPhongMaterial color="#8B5CF6" />
       </Cone>
       
       {/* Main Body - Upper */}
-      <Cylinder
-        args={[0.15, 0.15, 0.8, 8]}
-        position={[0, 0.2, 0]}
-      >
+      <Cylinder args={[0.15, 0.15, 0.8, 8]} position={[0, 0.2, 0]}>
         <meshPhongMaterial color="#FFFFFF" />
       </Cylinder>
       
       {/* Main Body - Lower */}
-      <Cylinder
-        args={[0.15, 0.15, 0.6, 8]}
-        position={[0, -0.5, 0]}
-      >
+      <Cylinder args={[0.15, 0.15, 0.6, 8]} position={[0, -0.5, 0]}>
         <meshPhongMaterial color="#10B981" />
       </Cylinder>
       
       {/* Side Boosters */}
-      <Cylinder
-        args={[0.08, 0.08, 1.2, 8]}
-        position={[0.25, -0.2, 0]}
-      >
+      <Cylinder args={[0.08, 0.08, 1.2, 8]} position={[0.25, -0.2, 0]}>
         <meshPhongMaterial color="#10B981" />
       </Cylinder>
-      <Cylinder
-        args={[0.08, 0.08, 1.2, 8]}
-        position={[-0.25, -0.2, 0]}
-      >
+      <Cylinder args={[0.08, 0.08, 1.2, 8]} position={[-0.25, -0.2, 0]}>
         <meshPhongMaterial color="#10B981" />
       </Cylinder>
       
       {/* Booster Nozzles */}
-      <Cylinder
-        args={[0.06, 0.08, 0.2, 8]}
-        position={[0.25, -0.9, 0]}
-      >
+      <Cylinder args={[0.06, 0.08, 0.2, 8]} position={[0.25, -0.9, 0]}>
         <meshPhongMaterial color="#F97316" />
       </Cylinder>
-      <Cylinder
-        args={[0.06, 0.08, 0.2, 8]}
-        position={[-0.25, -0.9, 0]}
-      >
+      <Cylinder args={[0.06, 0.08, 0.2, 8]} position={[-0.25, -0.9, 0]}>
         <meshPhongMaterial color="#F97316" />
       </Cylinder>
       
       {/* Main Engine Nozzle */}
-      <Cylinder
-        args={[0.1, 0.15, 0.3, 8]}
-        position={[0, -1, 0]}
-      >
+      <Cylinder args={[0.1, 0.15, 0.3, 8]} position={[0, -1, 0]}>
         <meshPhongMaterial color="#F97316" />
       </Cylinder>
       
