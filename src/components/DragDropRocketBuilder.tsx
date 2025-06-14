@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +13,8 @@ interface RocketPart {
   thrust?: number;
   stability?: number;
   image?: string;
+  diameter?: number;
+  length?: number;
 }
 
 interface DroppedPart extends RocketPart {
@@ -92,9 +93,14 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
   const isComplete = Object.keys(droppedParts).length === 4;
 
   const handleSaveDesign = () => {
+    // Extract diameter and length for body, or use defaults if missing
+    const bodyPart = droppedParts[1] || { mass: 0, diameter: 24, length: 200 };
+    const diameter = bodyPart.diameter || 24;
+    const length = bodyPart.length || 200;
+    const mass = bodyPart.mass || 0;
     const rocketDesign = {
       nose: droppedParts[0] || null,
-      body: droppedParts[1] || null,
+      body: { diameter, length, mass },
       fins: droppedParts[2] || null,
       engine: droppedParts[3] || null,
       totalMass,
