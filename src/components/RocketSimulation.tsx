@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Play, RotateCcw, TrendingUp, Clock } from 'lucide-react';
-import Rocket3DVisualization from './Rocket3DVisualization';
 
 interface RocketDesign {
   nose: { name: string; mass: number; drag: number };
@@ -35,6 +34,7 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationData, setSimulationData] = useState<SimulationData[]>([]);
   const [currentStep, setCurrentStep] = useState(0);
+  const [rocketPosition, setRocketPosition] = useState(0);
 
   // Default rocket if none provided
   const defaultRocket: RocketDesign = {
@@ -64,6 +64,7 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
 
     setIsSimulating(true);
     setCurrentStep(0);
+    setRocketPosition(0);
     onProgressUpdate('simulationRun', true);
 
     // Constants
@@ -203,13 +204,10 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
             setIsSimulating(false);
             return prev;
           }
-<<<<<<< HEAD
           
           const currentData = simulationData[next];
           setRocketPosition(Math.min(currentData.altitude * 0.5, 300)); // Scale for visualization
           
-=======
->>>>>>> ad89cae6d7b07e083f9f04d2c49030ad317ab24e
           return next;
         });
       }, 50);
@@ -244,19 +242,63 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6">
-          {/* 3D Visualization Panel */}
+          {/* Visualization Panel */}
           <Card className="lg:row-span-2">
             <CardHeader>
-              <CardTitle>3D Launch Visualization</CardTitle>
-              <CardDescription>
-                Interactive 3D rocket simulation - drag to rotate, scroll to zoom
-              </CardDescription>
+              <CardTitle>Launch Visualization</CardTitle>
+              <CardDescription>Watch your rocket soar!</CardDescription>
             </CardHeader>
             <CardContent>
-              <Rocket3DVisualization 
-                currentData={currentData}
-                isSimulating={isSimulating}
-              />
+              <div className="relative h-96 bg-gradient-to-b from-blue-900 via-blue-700 to-green-500 rounded-lg overflow-hidden">
+                {/* Sky background with clouds */}
+                <div className="absolute inset-0 opacity-30">
+                  <div className="absolute top-10 left-10 w-16 h-8 bg-white rounded-full"></div>
+                  <div className="absolute top-20 right-16 w-12 h-6 bg-white rounded-full"></div>
+                  <div className="absolute top-16 left-1/2 w-20 h-10 bg-white rounded-full"></div>
+                </div>
+                
+                {/* Ground */}
+                <div className="absolute bottom-0 w-full h-16 bg-green-600"></div>
+                
+                {/* Launch pad */}
+                <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 w-8 h-2 bg-gray-600"></div>
+                
+                {/* Rocket */}
+                <div
+                  className="absolute transition-all duration-100 ease-linear"
+                  style={{ 
+                    bottom: `${64 + rocketPosition}px`,
+                    left: `calc(50% + ${currentData.horizontalPosition * 2}px)`,
+                    transform: `translateX(-50%) ${isSimulating ? 'scale(0.8)' : 'scale(1)'}`
+                  }}
+                >
+                  <div className="relative">
+                    {/* Rocket body */}
+                    <div className="w-6 h-16 bg-gradient-to-b from-primary to-primary/70 rounded-t-full mx-auto"></div>
+                    <div className="w-4 h-12 bg-muted mx-auto"></div>
+                    <div className="w-8 h-3 bg-accent mx-auto"></div>
+                    
+                    {/* Flame effect during simulation */}
+                    {isSimulating && currentData.time < 2 && (
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2">
+                        <div className="w-3 h-8 bg-gradient-to-b from-red-500 to-yellow-400 rounded-b-full animate-pulse"></div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Altitude and position markers */}
+                {simulationData.length > 0 && (
+                  <>
+                    <div className="absolute top-4 left-4 bg-black/50 text-white px-2 py-1 rounded text-sm">
+                      Altitude: {currentData.altitude.toFixed(1)}m
+                    </div>
+                    <div className="absolute top-4 right-4 bg-black/50 text-white px-2 py-1 rounded text-sm">
+                      Distance: {currentData.horizontalPosition.toFixed(1)}m
+                    </div>
+                  </>
+                )}
+              </div>
             </CardContent>
           </Card>
 
@@ -280,6 +322,7 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
                   onClick={() => {
                     setSimulationData([]);
                     setCurrentStep(0);
+                    setRocketPosition(0);
                   }}
                 >
                   <RotateCcw className="h-4 w-4" />
