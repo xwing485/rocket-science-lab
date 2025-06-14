@@ -207,13 +207,12 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
           const currentData = simulationData[next];
           
           // Dynamic camera system - camera follows rocket when it gets high enough
-          const followThreshold = 50; // Start following after 50m
-          const viewportHeight = 400; // Height of the visualization area
+          const followThreshold = 30; // Start following after 30m
           
           if (currentData.altitude > followThreshold) {
-            // Camera follows rocket, keeping it in the center-bottom portion of the view
-            const targetCameraOffset = currentData.altitude - followThreshold;
-            setCameraOffset(targetCameraOffset);
+            // Camera follows rocket, keeping it in the center portion of the view
+            const targetCameraOffset = currentData.altitude - 200; // Keep rocket in middle of 400px view
+            setCameraOffset(Math.max(0, targetCameraOffset));
           } else {
             setCameraOffset(0);
           }
@@ -257,11 +256,11 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
             <CardHeader>
               <CardTitle>Launch Visualization</CardTitle>
               <CardDescription>
-                Dynamic camera follows your rocket! View range: {Math.round(cameraOffset)}m - {Math.round(cameraOffset + 400)}m
+                {cameraOffset > 0 ? `📹 Camera Following - View: ${Math.round(cameraOffset)}m to ${Math.round(cameraOffset + 400)}m` : 'Ground View - Camera will follow rocket above 30m altitude'}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="relative h-[500px] bg-gradient-to-b from-blue-900 via-blue-700 to-green-500 rounded-lg overflow-hidden">
+              <div className="relative h-[600px] bg-gradient-to-b from-blue-900 via-blue-700 to-green-500 rounded-lg overflow-hidden">
                 {/* Dynamic altitude markers based on camera position */}
                 <div className="absolute left-2 top-4 text-white text-xs font-semibold bg-black/30 px-2 py-1 rounded">
                   {Math.round(cameraOffset + 400)}m
@@ -324,7 +323,7 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
                 <div
                   className="absolute transition-all duration-100 ease-linear"
                   style={{ 
-                    bottom: `${Math.max(0, (currentData.altitude - cameraOffset) * 1.25)}px`,
+                    bottom: `${Math.max(0, (currentData.altitude - cameraOffset) * 1.5)}px`,
                     left: `calc(50% + ${currentData.horizontalPosition * 2}px)`,
                     transform: `translateX(-50%) ${isSimulating ? 'scale(0.8)' : 'scale(1)'}`
                   }}
@@ -349,7 +348,7 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
                   <>
                     <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-2 rounded-lg text-sm font-semibold">
                       <div>Altitude: {currentData.altitude.toFixed(1)}m</div>
-                      <div>Camera: {cameraOffset.toFixed(0)}m offset</div>
+                      <div>Camera: {cameraOffset > 0 ? 'Following' : 'Ground View'}</div>
                     </div>
                     <div className="absolute top-4 right-4 bg-black/70 text-white px-3 py-2 rounded-lg text-sm font-semibold">
                       <div>Distance: {currentData.horizontalPosition.toFixed(1)}m</div>
@@ -360,8 +359,8 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
                 
                 {/* Camera following indicator */}
                 {cameraOffset > 0 && (
-                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-yellow-500/80 text-black px-3 py-1 rounded-full text-xs font-bold">
-                    📹 Camera Following
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-yellow-500/80 text-black px-3 py-1 rounded-full text-xs font-bold animate-pulse">
+                    📹 Camera Following Rocket
                   </div>
                 )}
               </div>
