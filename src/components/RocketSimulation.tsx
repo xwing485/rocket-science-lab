@@ -203,13 +203,10 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
             setIsSimulating(false);
             return prev;
           }
-<<<<<<< HEAD
           
           const currentData = simulationData[next];
-          setRocketPosition(Math.min(currentData.altitude * 0.5, 300)); // Scale for visualization
+          setRocketPosition(Math.min(currentData.altitude * 2, 300)); // Scale for visualization
           
-=======
->>>>>>> ad89cae6d7b07e083f9f04d2c49030ad317ab24e
           return next;
         });
       }, 50);
