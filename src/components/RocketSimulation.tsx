@@ -107,7 +107,7 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
 
       // Calculate thrust curve (more realistic)
       const thrust = time < burnTime 
-        ? rocket.thrust * 1000 * Math.max(1 - Math.pow(time / burnTime, 1.5), 0) // Convert to N and use more realistic curve
+        ? rocket.thrust * Math.max(1 - Math.pow(time / burnTime, 1.5), 0) // Use N, no multiplier
         : 0;
 
       // Calculate forces
@@ -151,16 +151,25 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
       // Update velocities with improved accuracy
       velocity += verticalAcceleration * dt;
       horizontalVelocity += horizontalAcceleration * dt;
+      // Cap velocity to a reasonable value (e.g., 200 m/s)
+      velocity = Math.min(velocity, 200);
+      horizontalVelocity = Math.min(horizontalVelocity, 200);
       
       // Update positions
       altitude += velocity * dt;
       horizontalPosition += horizontalVelocity * dt;
       
-      // Check if rocket has landed
+      // Check if rocket has landed or reached apogee
       if (altitude < 0) {
         altitude = 0;
         velocity = 0;
         horizontalVelocity = 0;
+      }
+      // Stop simulation if rocket starts descending (apogee)
+      if (velocity < 0 && altitude > 0) {
+        setIsSimulating(false);
+        setSimulationData(data);
+        return;
       }
       
       data.push({
