@@ -38,7 +38,7 @@ const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: Ro
     name: 'Cone Nose',
     mass: 10,
     drag: 0.5,
-    image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=200&h=150&fit=crop'
+    image: 'https://picsum.photos/200/150?random=1'
   });
 
   const [selectedFins, setSelectedFins] = useState<RocketPart>({
@@ -47,7 +47,7 @@ const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: Ro
     mass: 15,
     drag: 0.8,
     stability: 2.0,
-    image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=200&h=150&fit=crop'
+    image: 'https://picsum.photos/200/150?random=2'
   });
 
   const [selectedEngine, setSelectedEngine] = useState<RocketPart>({
@@ -56,7 +56,7 @@ const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: Ro
     mass: 24,
     drag: 0.1,
     thrust: 2.5,
-    image: 'https://images.unsplash.com/photo-1581090464777-f3220bbe1b8b?w=200&h=150&fit=crop'
+    image: 'https://picsum.photos/200/150?random=3'
   });
 
   const [bodyDiameter, setBodyDiameter] = useState([24]);
@@ -68,21 +68,21 @@ const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: Ro
       name: 'Cone Nose', 
       mass: 10, 
       drag: 0.5,
-      image: 'https://images.unsplash.com/photo-1487887235947-a955ef187fcc?w=200&h=150&fit=crop'
+      image: 'https://picsum.photos/200/150?random=1'
     },
     { 
       type: 'nose' as const, 
       name: 'Ogive Nose', 
       mass: 12, 
       drag: 0.4,
-      image: 'https://images.unsplash.com/photo-1485833077593-4278bba3f11f?w=200&h=150&fit=crop'
+      image: 'https://picsum.photos/200/150?random=4'
     },
     { 
       type: 'nose' as const, 
       name: 'Parabolic Nose', 
       mass: 11, 
       drag: 0.45,
-      image: 'https://images.unsplash.com/photo-1469041797191-50ace28483c3?w=200&h=150&fit=crop'
+      image: 'https://picsum.photos/200/150?random=5'
     }
   ];
 
@@ -93,7 +93,7 @@ const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: Ro
       mass: 15, 
       drag: 0.8, 
       stability: 2.0,
-      image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=200&h=150&fit=crop'
+      image: 'https://picsum.photos/200/150?random=2'
     },
     { 
       type: 'fins' as const, 
@@ -101,7 +101,7 @@ const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: Ro
       mass: 22, 
       drag: 1.2, 
       stability: 3.0,
-      image: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=200&h=150&fit=crop'
+      image: 'https://picsum.photos/200/150?random=6'
     },
     { 
       type: 'fins' as const, 
@@ -109,7 +109,7 @@ const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: Ro
       mass: 18, 
       drag: 0.9, 
       stability: 2.5,
-      image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=200&h=150&fit=crop'
+      image: 'https://picsum.photos/200/150?random=7'
     }
   ];
 
@@ -120,7 +120,7 @@ const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: Ro
       mass: 24, 
       drag: 0.1, 
       thrust: 2.5,
-      image: 'https://images.unsplash.com/photo-1581090464777-f3220bbe1b8b?w=200&h=150&fit=crop'
+      image: 'https://picsum.photos/200/150?random=3'
     },
     { 
       type: 'engine' as const, 
@@ -128,7 +128,7 @@ const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: Ro
       mass: 28, 
       drag: 0.1, 
       thrust: 5.0,
-      image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=200&h=150&fit=crop'
+      image: 'https://picsum.photos/200/150?random=8'
     },
     { 
       type: 'engine' as const, 
@@ -136,7 +136,7 @@ const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: Ro
       mass: 32, 
       drag: 0.1, 
       thrust: 10.0,
-      image: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=200&h=150&fit=crop'
+      image: 'https://picsum.photos/200/150?random=9'
     }
   ];
 
@@ -198,7 +198,10 @@ const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: Ro
                       <img 
                         src={nose.image} 
                         alt={nose.name}
-                        className="w-full h-20 object-cover rounded"
+                        className="w-full h-20 object-cover rounded bg-muted"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
                       />
                       <div className="font-medium text-center">{nose.name}</div>
                       <div className="text-xs text-muted-foreground text-center">
@@ -266,7 +269,10 @@ const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: Ro
                       <img 
                         src={fins.image} 
                         alt={fins.name}
-                        className="w-full h-20 object-cover rounded"
+                        className="w-full h-20 object-cover rounded bg-muted"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
                       />
                       <div className="font-medium text-center">{fins.name}</div>
                       <div className="text-xs text-muted-foreground text-center">
@@ -299,7 +305,10 @@ const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: Ro
                       <img 
                         src={engine.image} 
                         alt={engine.name}
-                        className="w-full h-20 object-cover rounded"
+                        className="w-full h-20 object-cover rounded bg-muted"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
                       />
                       <div className="font-medium text-center">{engine.name}</div>
                       <div className="text-xs text-muted-foreground text-center">
