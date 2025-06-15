@@ -3,6 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Rocket, Save, Play } from 'lucide-react';
+import { useRocketDesigns } from '@/hooks/useRocketDesigns';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface RocketPart {
   id: string;
@@ -30,7 +34,11 @@ interface DragDropRocketBuilderProps {
 const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: DragDropRocketBuilderProps) => {
   const [activeTab, setActiveTab] = useState<'nose' | 'body' | 'fins' | 'engine'>('nose');
   const [draggedPart, setDraggedPart] = useState<RocketPart | null>(null);
-  const [droppedParts, setDroppedParts] = useState<{[key: number]: DroppedPart}>({});
+  const [droppedParts, setDroppedParts] = useState<{ [key: number]: RocketPart }>({});
+  const { saveDesign } = useRocketDesigns();
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [designName, setDesignName] = useState('');
+  const [designDescription, setDesignDescription] = useState('');
 
   const parts = {
     nose: [
@@ -92,7 +100,7 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
 
   const isComplete = Object.keys(droppedParts).length === 4;
 
-  const handleSaveDesign = () => {
+  const handleSaveDesign = async () => {
     // Extract diameter and length for body, or use defaults if missing
     const bodyPart = droppedParts[1] || { mass: 0, diameter: 24, length: 200 };
     const diameter = bodyPart.diameter || 24;
@@ -109,24 +117,49 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
       stability
     };
 
-    // Prompt for design name
-    const designName = prompt('Enter a name for this design:');
-    if (!designName) return;
+    setShowSaveDialog(true);
+  };
 
-    // Save to localStorage
-    const savedDesigns = JSON.parse(localStorage.getItem('savedRocketDesigns') || '[]');
-    const newDesign = {
-      ...rocketDesign,
-      id: Date.now().toString(),
+  const handleSaveConfirm = async () => {
+    if (!designName.trim()) return;
+
+    const bodyPart = droppedParts[1] || { mass: 0, diameter: 24, length: 200 };
+    const diameter = bodyPart.diameter || 24;
+    const length = bodyPart.length || 200;
+    const mass = bodyPart.mass || 0;
+
+    const designData = {
       name: designName,
-      savedAt: new Date().toISOString()
+      description: designDescription,
+      nose_cone: droppedParts[0] || null,
+      body_tube: { diameter, length, mass },
+      fins: droppedParts[2] || null,
+      engine: droppedParts[3] || null,
+      performance_stats: {
+        totalMass,
+        totalDrag,
+        thrust,
+        stability
+      }
     };
-    savedDesigns.push(newDesign);
-    localStorage.setItem('savedRocketDesigns', JSON.stringify(savedDesigns));
 
-    // Update current rocket and progress
-    onRocketUpdate(rocketDesign);
-    onProgressUpdate('rocketBuilt', true);
+    const result = await saveDesign(designData);
+    if (result) {
+      setShowSaveDialog(false);
+      setDesignName('');
+      setDesignDescription('');
+      onRocketUpdate({
+        nose: droppedParts[0] || null,
+        body: { diameter, length, mass },
+        fins: droppedParts[2] || null,
+        engine: droppedParts[3] || null,
+        totalMass,
+        totalDrag,
+        thrust,
+        stability
+      });
+      onProgressUpdate('rocketBuilt', true);
+    }
   };
 
   const handleSimulate = () => {
@@ -379,6 +412,40 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
           </div>
         </div>
       </div>
+
+      <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save Rocket Design</DialogTitle>
+            <DialogDescription>
+              Give your rocket design a name and optional description.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="name">Design Name</Label>
+              <Input
+                id="name"
+                value={designName}
+                onChange={(e) => setDesignName(e.target.value)}
+                placeholder="Enter design name..."
+              />
+            </div>
+            <div>
+              <Label htmlFor="description">Description (optional)</Label>
+              <Input
+                id="description"
+                value={designDescription}
+                onChange={(e) => setDesignDescription(e.target.value)}
+                placeholder="Enter description..."
+              />
+            </div>
+            <Button onClick={handleSaveConfirm} disabled={!designName.trim()}>
+              Save Design
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
