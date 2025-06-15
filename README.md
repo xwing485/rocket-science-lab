@@ -1,4 +1,4 @@
-# Rocket Lab
+# Rocket Lab 2
 
 ## Project info
 
