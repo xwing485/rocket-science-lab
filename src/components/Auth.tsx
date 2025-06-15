@@ -33,19 +33,24 @@ const Auth = ({ onSuccess }: AuthProps) => {
           title: "Welcome back!",
           description: "You have successfully signed in.",
         });
+        onSuccess?.();
       } else {
+        // Sign up with proper email redirect configuration
         const { error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+          },
         });
         if (error) throw error;
         toast({
-          title: "Account created!",
-          description: "Please check your email to verify your account.",
+          title: "Check your email!",
+          description: "We've sent you a verification link. Please check your email to complete registration.",
         });
       }
-      onSuccess?.();
     } catch (error: any) {
+      console.error('Auth error:', error);
       toast({
         title: "Error",
         description: error.message,
@@ -84,6 +89,7 @@ const Auth = ({ onSuccess }: AuthProps) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              minLength={6}
             />
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
