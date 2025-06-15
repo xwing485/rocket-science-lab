@@ -108,6 +108,23 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
       thrust,
       stability
     };
+
+    // Prompt for design name
+    const designName = prompt('Enter a name for this design:');
+    if (!designName) return;
+
+    // Save to localStorage
+    const savedDesigns = JSON.parse(localStorage.getItem('savedRocketDesigns') || '[]');
+    const newDesign = {
+      ...rocketDesign,
+      id: Date.now().toString(),
+      name: designName,
+      savedAt: new Date().toISOString()
+    };
+    savedDesigns.push(newDesign);
+    localStorage.setItem('savedRocketDesigns', JSON.stringify(savedDesigns));
+
+    // Update current rocket and progress
     onRocketUpdate(rocketDesign);
     onProgressUpdate('rocketBuilt', true);
   };
