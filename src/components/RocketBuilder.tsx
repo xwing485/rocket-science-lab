@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -32,7 +31,7 @@ const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: Ro
   const { saveDesign } = useRocketDesigns();
 
   // Check auth status
-  useState(() => {
+  useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
@@ -47,7 +46,7 @@ const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: Ro
     });
 
     return () => subscription.unsubscribe();
-  });
+  }, []);
 
   const bodyMass = (bodyDiameter[0] * bodyLength[0]) / 1000;
   const totalMass = selectedNose.mass + bodyMass + selectedFins.mass + selectedEngine.mass;
