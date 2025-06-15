@@ -8,6 +8,7 @@ import { RocketPart, RocketDesign, RocketBuilderProps } from '@/types/rocket';
 import { noseCones, finSets, engines } from '@/data/rocketParts';
 import { useRocketDesigns } from '@/hooks/useRocketDesigns';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import Auth from './Auth';
 import NoseConeSelector from './rocket-builder/NoseConeSelector';
 import BodyTubeSelector from './rocket-builder/BodyTubeSelector';
@@ -27,18 +28,22 @@ const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: Ro
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [designName, setDesignName] = useState('');
   const [designDescription, setDesignDescription] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const { saveDesign } = useRocketDesigns();
+  const { toast } = useToast();
 
   // Check auth status
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
+      console.log('Current user:', user);
       setUser(user);
     };
     getUser();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event, session?.user);
       setUser(session?.user || null);
       if (event === 'SIGNED_IN') {
         setShowAuthDialog(false);
@@ -72,14 +77,28 @@ const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: Ro
   };
 
   const handleSaveDesign = async () => {
+    console.log('Save button clicked, user state:', user);
+    
     if (!user) {
+      console.log('No user found, showing auth dialog');
       setShowAuthDialog(true);
       return;
     }
 
+    if (!designName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a design name.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
     const designData = {
-      name: designName,
-      description: designDescription,
+      name: designName.trim(),
+      description: designDescription.trim() || null,
       nose_cone: selectedNose,
       body_tube: { diameter: bodyDiameter[0], length: bodyLength[0], mass: bodyMass },
       fins: selectedFins,
@@ -88,17 +107,36 @@ const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: Ro
         totalMass,
         totalDrag,
         thrust,
-        stability
+        stability,
+        thrustToWeightRatio
       }
     };
 
-    const result = await saveDesign(designData);
-    if (result) {
-      setShowSaveDialog(false);
-      setDesignName('');
-      setDesignDescription('');
-      onProgressUpdate('rocketBuilt', true);
-      onRocketUpdate(rocketDesign);
+    console.log('Saving design data:', designData);
+
+    try {
+      const result = await saveDesign(designData);
+      if (result) {
+        console.log('Design saved successfully');
+        setShowSaveDialog(false);
+        setDesignName('');
+        setDesignDescription('');
+        onProgressUpdate('rocketBuilt', true);
+        onRocketUpdate(rocketDesign);
+        toast({
+          title: "Success",
+          description: `Rocket design "${designData.name}" saved successfully!`,
+        });
+      }
+    } catch (error) {
+      console.error('Error saving design:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save rocket design. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -184,8 +222,12 @@ const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: Ro
                         placeholder="Enter description..."
                       />
                     </div>
-                    <Button onClick={handleSaveDesign} disabled={!designName.trim()}>
-                      Save Design
+                    <Button 
+                      onClick={handleSaveDesign} 
+                      disabled={!designName.trim() || isLoading}
+                      className="w-full"
+                    >
+                      {isLoading ? 'Saving...' : 'Save Design'}
                     </Button>
                   </div>
                 </DialogContent>
