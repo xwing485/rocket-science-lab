@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { Play, RotateCcw, TrendingUp, Clock } from 'lucide-react';
 import Rocket3DVisualization from './Rocket3DVisualization';
+import RocketAICoach from './RocketAICoach';
 
 interface RocketDesign {
   nose: { name: string; mass: number; drag: number };
@@ -227,6 +228,14 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
 
   const performanceRating = getPerformanceRating();
 
+  // Prepare simulation results for AI coach
+  const simulationResults = simulationData.length > 0 ? {
+    maxAltitude,
+    maxVelocity,
+    flightTime,
+    performanceRating: performanceRating.rating
+  } : null;
+
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-6xl mx-auto">
@@ -359,6 +368,14 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
               )}
             </CardContent>
           </Card>
+        </div>
+
+        {/* AI Coach Panel */}
+        <div className="mt-6">
+          <RocketAICoach 
+            rocketDesign={rocket}
+            simulationResults={simulationResults}
+          />
         </div>
 
         {/* Rocket Design Summary */}
