@@ -44,7 +44,7 @@ const MissionControl = ({ onSectionChange, progress }: MissionControlProps) => {
             <Rocket className="h-24 w-24 text-primary mx-auto animate-float" />
           </div>
           <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-            Welcome to Rocket Academy
+            Rocket Academy
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Blast off into the amazing world of rocket science! Learn how rockets work, 
