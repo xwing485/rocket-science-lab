@@ -2,7 +2,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const huggingfaceApiKey = Deno.env.get('HUGGINGFACE_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -45,32 +45,29 @@ Please provide:
 
 Keep responses practical for model rocket enthusiasts. Focus on achievable improvements using common rocket parts.`;
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://api-inference.huggingface.co/models/microsoft/DialoGPT-large', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${huggingfaceApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { 
-            role: 'system', 
-            content: 'You are an expert model rocket engineer and coach. Provide specific, actionable feedback to help users improve their rocket designs and performance. Be encouraging but honest about areas for improvement.'
-          },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 1000,
+        inputs: prompt,
+        parameters: {
+          max_new_tokens: 1000,
+          temperature: 0.7,
+          do_sample: true,
+          return_full_text: false
+        }
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
+      throw new Error(`Hugging Face API error: ${response.status}`);
     }
 
     const data = await response.json();
-    const feedback = data.choices[0].message.content;
+    const feedback = data[0]?.generated_text || data.generated_text || 'Unable to generate feedback at this time.';
 
     console.log('Generated feedback:', feedback);
 
