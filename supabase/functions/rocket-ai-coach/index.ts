@@ -45,7 +45,7 @@ Please provide:
 
 Keep responses practical for model rocket enthusiasts. Focus on achievable improvements using common rocket parts.`;
 
-    const response = await fetch('https://api-inference.huggingface.co/models/microsoft/DialoGPT-large', {
+    const response = await fetch('https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${huggingfaceApiKey}`,
@@ -54,19 +54,22 @@ Keep responses practical for model rocket enthusiasts. Focus on achievable impro
       body: JSON.stringify({
         inputs: prompt,
         parameters: {
-          max_new_tokens: 1000,
+          max_length: 500,
           temperature: 0.7,
           do_sample: true,
-          return_full_text: false
+          top_p: 0.9
         }
       }),
     });
 
     if (!response.ok) {
+      console.error('Hugging Face API response:', response.status, await response.text());
       throw new Error(`Hugging Face API error: ${response.status}`);
     }
 
     const data = await response.json();
+    console.log('Raw API response:', data);
+    
     const feedback = data[0]?.generated_text || data.generated_text || 'Unable to generate feedback at this time.';
 
     console.log('Generated feedback:', feedback);
