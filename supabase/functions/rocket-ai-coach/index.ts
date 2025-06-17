@@ -2,7 +2,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const huggingfaceApiKey = Deno.env.get('HUGGINGFACE_API_KEY');
+const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -45,61 +45,32 @@ Please provide:
 
 Keep responses practical for model rocket enthusiasts. Focus on achievable improvements using common rocket parts.`;
 
-    const response = await fetch('https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium', {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${huggingfaceApiKey}`,
+        'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        inputs: prompt,
-        parameters: {
-          max_new_tokens: 512,
-          temperature: 0.8,
-          do_sample: true,
-          top_p: 0.9,
-          repetition_penalty: 1.1
-        }
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: 'You are an expert rocket engineer and coach specializing in model rockets. Provide detailed, practical advice for improving rocket designs and performance.' },
+          { role: 'user', content: prompt }
+        ],
+        max_tokens: 800,
+        temperature: 0.7
       }),
     });
 
     if (!response.ok) {
-      console.error('Hugging Face API response:', response.status, await response.text());
-      
-      // Fallback to a different model if DialoGPT fails
-      const fallbackResponse = await fetch('https://api-inference.huggingface.co/models/google/flan-t5-large', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${huggingfaceApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          inputs: `Generate rocket engineering feedback: ${prompt}`,
-          parameters: {
-            max_new_tokens: 512,
-            temperature: 0.7
-          }
-        }),
-      });
-
-      if (!fallbackResponse.ok) {
-        throw new Error(`Hugging Face API error: ${response.status}`);
-      }
-
-      const fallbackData = await fallbackResponse.json();
-      console.log('Fallback API response:', fallbackData);
-      
-      const feedback = fallbackData[0]?.generated_text || fallbackData.generated_text || 'Unable to generate feedback at this time.';
-      
-      return new Response(JSON.stringify({ feedback }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      console.error('OpenAI API response:', response.status, await response.text());
+      throw new Error(`OpenAI API error: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log('Raw API response:', data);
+    console.log('OpenAI API response:', data);
     
-    const feedback = data[0]?.generated_text || data.generated_text || 'Unable to generate feedback at this time.';
+    const feedback = data.choices[0]?.message?.content || 'Unable to generate feedback at this time.';
 
     console.log('Generated feedback:', feedback);
 
