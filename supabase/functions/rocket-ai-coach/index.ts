@@ -54,17 +54,46 @@ Keep responses practical for model rocket enthusiasts. Focus on achievable impro
       body: JSON.stringify({
         inputs: prompt,
         parameters: {
-          max_length: 500,
-          temperature: 0.7,
+          max_new_tokens: 512,
+          temperature: 0.8,
           do_sample: true,
-          top_p: 0.9
+          top_p: 0.9,
+          repetition_penalty: 1.1
         }
       }),
     });
 
     if (!response.ok) {
       console.error('Hugging Face API response:', response.status, await response.text());
-      throw new Error(`Hugging Face API error: ${response.status}`);
+      
+      // Fallback to a different model if DialoGPT fails
+      const fallbackResponse = await fetch('https://api-inference.huggingface.co/models/google/flan-t5-large', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${huggingfaceApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          inputs: `Generate rocket engineering feedback: ${prompt}`,
+          parameters: {
+            max_new_tokens: 512,
+            temperature: 0.7
+          }
+        }),
+      });
+
+      if (!fallbackResponse.ok) {
+        throw new Error(`Hugging Face API error: ${response.status}`);
+      }
+
+      const fallbackData = await fallbackResponse.json();
+      console.log('Fallback API response:', fallbackData);
+      
+      const feedback = fallbackData[0]?.generated_text || fallbackData.generated_text || 'Unable to generate feedback at this time.';
+      
+      return new Response(JSON.stringify({ feedback }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const data = await response.json();
