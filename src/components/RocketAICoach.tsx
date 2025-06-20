@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Brain, Loader2, Lightbulb } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useRocketDesigns } from '@/hooks/useRocketDesigns';
+import { noseCones, finSets, engines } from '@/data/rocketParts';
 
 interface RocketDesign {
   nose: { name: string; mass: number; drag: number };
@@ -33,6 +35,7 @@ const RocketAICoach = ({ rocketDesign, simulationResults }: RocketAICoachProps) 
   const [feedback, setFeedback] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { toast } = useToast();
+  const { designs } = useRocketDesigns();
 
   const analyzeFeedback = async () => {
     if (!rocketDesign || !simulationResults) {
@@ -48,10 +51,20 @@ const RocketAICoach = ({ rocketDesign, simulationResults }: RocketAICoachProps) 
     setFeedback('');
 
     try {
-      console.log('Calling AI coach with data:', { rocketDesign, simulationResults });
+      console.log('Calling AI coach with comprehensive data:', { 
+        rocketDesign, 
+        simulationResults, 
+        savedDesigns: designs,
+        availableParts: { noseCones, finSets, engines }
+      });
       
       const { data, error } = await supabase.functions.invoke('rocket-ai-coach', {
-        body: { rocketDesign, simulationResults }
+        body: { 
+          rocketDesign, 
+          simulationResults,
+          savedDesigns: designs,
+          availableParts: { noseCones, finSets, engines }
+        }
       });
 
       if (error) {
@@ -64,7 +77,7 @@ const RocketAICoach = ({ rocketDesign, simulationResults }: RocketAICoachProps) 
       
       toast({
         title: "Analysis Complete!",
-        description: "Your AI coach has analyzed your rocket design.",
+        description: "Your AI coach has analyzed your rocket design with historical data.",
       });
     } catch (error) {
       console.error('Error getting AI feedback:', error);
@@ -88,7 +101,7 @@ const RocketAICoach = ({ rocketDesign, simulationResults }: RocketAICoachProps) 
           AI Rocket Coach
         </CardTitle>
         <CardDescription>
-          Get personalized feedback on your rocket design and flight performance
+          Get personalized feedback based on your rocket design, flight performance, saved designs, and available parts
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -100,12 +113,12 @@ const RocketAICoach = ({ rocketDesign, simulationResults }: RocketAICoachProps) 
           {isAnalyzing ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Analyzing Your Rocket...
+              Analyzing Your Rocket Collection...
             </>
           ) : (
             <>
               <Lightbulb className="h-4 w-4 mr-2" />
-              Get AI Feedback
+              Get Comprehensive AI Analysis
             </>
           )}
         </Button>
@@ -114,6 +127,12 @@ const RocketAICoach = ({ rocketDesign, simulationResults }: RocketAICoachProps) 
           <p className="text-sm text-muted-foreground text-center">
             Build a rocket and run a simulation to get AI feedback
           </p>
+        )}
+
+        {designs.length > 0 && (
+          <div className="text-xs text-muted-foreground text-center">
+            Will analyze {designs.length} saved design{designs.length !== 1 ? 's' : ''} and {noseCones.length + finSets.length + engines.length} available parts
+          </div>
         )}
 
         {feedback && (

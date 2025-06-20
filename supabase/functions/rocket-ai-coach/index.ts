@@ -15,11 +15,13 @@ serve(async (req) => {
   }
 
   try {
-    const { rocketDesign, simulationResults, customPrompt } = await req.json();
+    const { rocketDesign, simulationResults, customPrompt, savedDesigns, availableParts } = await req.json();
 
     console.log('Analyzing rocket design:', rocketDesign);
     console.log('Simulation results:', simulationResults);
     console.log('Custom prompt:', customPrompt);
+    console.log('Saved designs count:', savedDesigns?.length || 0);
+    console.log('Available parts:', availableParts ? Object.keys(availableParts) : 'none');
 
     let prompt;
     
@@ -27,10 +29,36 @@ serve(async (req) => {
       // Handle chat widget questions
       prompt = customPrompt;
     } else {
-      // Handle full analysis requests
-      prompt = `As an expert rocket engineer and coach, analyze this model rocket design and simulation results. Provide specific, actionable feedback to help improve performance.
+      // Handle comprehensive analysis requests with saved designs and available parts
+      const savedDesignsAnalysis = savedDesigns && savedDesigns.length > 0 ? `
 
-ROCKET DESIGN:
+SAVED DESIGNS ANALYSIS (${savedDesigns.length} designs):
+${savedDesigns.map((design: any, index: number) => `
+Design ${index + 1}: "${design.name}"
+- Nose: ${design.nose_cone.name} (${design.nose_cone.mass}g, drag: ${design.nose_cone.drag})
+- Body: ${design.body_tube.diameter}mm × ${design.body_tube.length}mm (${design.body_tube.mass.toFixed(1)}g)
+- Fins: ${design.fins.name} (${design.fins.mass}g, stability: ${design.fins.stability})
+- Engine: ${design.engine.name} (${design.engine.mass}g, thrust: ${design.engine.thrust}N)
+- Total Mass: ${design.performance_stats.totalMass.toFixed(1)}g
+- Stability: ${design.performance_stats.stability.toFixed(1)}
+- Thrust-to-Weight: ${(design.performance_stats.thrust / (design.performance_stats.totalMass / 1000 * 9.81)).toFixed(1)}
+`).join('')}` : 'No saved designs available for comparison.';
+
+      const availablePartsAnalysis = availableParts ? `
+
+AVAILABLE PARTS INVENTORY:
+Nose Cones (${availableParts.noseCones?.length || 0}):
+${availableParts.noseCones?.map((part: any) => `- ${part.name}: ${part.mass}g, drag: ${part.drag}`).join('\n') || 'None'}
+
+Fin Sets (${availableParts.finSets?.length || 0}):
+${availableParts.finSets?.map((part: any) => `- ${part.name}: ${part.mass}g, drag: ${part.drag}, stability: ${part.stability}`).join('\n') || 'None'}
+
+Engines (${availableParts.engines?.length || 0}):
+${availableParts.engines?.map((part: any) => `- ${part.name}: ${part.mass}g, thrust: ${part.thrust}N`).join('\n') || 'None'}` : 'No parts inventory available.';
+
+      prompt = `As an expert rocket engineer and coach, analyze this model rocket design comprehensively using simulation results, historical saved designs, and available parts inventory to provide specific, actionable improvement recommendations.
+
+CURRENT ROCKET DESIGN:
 - Nose Cone: ${rocketDesign.nose.name} (${rocketDesign.nose.mass}g, drag: ${rocketDesign.nose.drag})
 - Body: ${rocketDesign.body.diameter}mm diameter × ${rocketDesign.body.length}mm length (${rocketDesign.body.mass.toFixed(1)}g)
 - Fins: ${rocketDesign.fins.name} (${rocketDesign.fins.mass}g, drag: ${rocketDesign.fins.drag})
@@ -39,19 +67,29 @@ ROCKET DESIGN:
 - Stability: ${rocketDesign.stability.toFixed(1)}
 - Thrust-to-Weight Ratio: ${(rocketDesign.thrust / (rocketDesign.totalMass / 1000 * 9.81)).toFixed(1)}
 
-SIMULATION RESULTS:
+CURRENT SIMULATION RESULTS:
 - Max Altitude: ${simulationResults.maxAltitude.toFixed(1)}m
 - Max Velocity: ${simulationResults.maxVelocity.toFixed(1)}m/s
 - Flight Time: ${simulationResults.flightTime.toFixed(1)}s
 - Performance Rating: ${simulationResults.performanceRating}
 
-Please provide:
-1. **Overall Assessment** (2-3 sentences)
-2. **Specific Improvements** (3-4 bullet points with concrete suggestions)
-3. **Design Trade-offs** (explain key compromises and alternatives)
-4. **Next Steps** (prioritized recommendations)
+${savedDesignsAnalysis}
 
-Keep responses practical for model rocket enthusiasts. Focus on achievable improvements using common rocket parts.`;
+${availablePartsAnalysis}
+
+Please provide a comprehensive analysis including:
+
+1. **Performance Comparison** (compare current design with your saved designs - which performed better and why?)
+
+2. **Specific Part Recommendations** (suggest exact parts from available inventory that would improve performance)
+
+3. **Design Pattern Analysis** (identify trends in your successful vs unsuccessful designs)
+
+4. **Optimization Strategy** (prioritized steps for improvement using available parts)
+
+5. **Expected Performance Gains** (estimate altitude/performance improvements from suggested changes)
+
+Focus on actionable recommendations using the specific parts available in the inventory. Reference your saved designs to show proven combinations that work well.`;
     }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -63,10 +101,10 @@ Keep responses practical for model rocket enthusiasts. Focus on achievable impro
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [
-          { role: 'system', content: 'You are an expert rocket engineer and coach specializing in model rockets. Provide detailed, practical advice for improving rocket designs and performance.' },
+          { role: 'system', content: 'You are an expert rocket engineer and coach specializing in model rockets. Provide detailed, practical advice for improving rocket designs and performance using available parts and historical design data.' },
           { role: 'user', content: prompt }
         ],
-        max_tokens: customPrompt ? 400 : 800,
+        max_tokens: customPrompt ? 400 : 1200,
         temperature: 0.7
       }),
     });
