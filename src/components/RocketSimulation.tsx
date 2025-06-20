@@ -26,13 +26,21 @@ interface SimulationData {
   horizontalVelocity: number;
 }
 
+interface SimulationResults {
+  maxAltitude: number;
+  maxVelocity: number;
+  flightTime: number;
+  performanceRating: string;
+}
+
 interface RocketSimulationProps {
   onSectionChange: (section: string) => void;
   onProgressUpdate: (key: string, value: boolean) => void;
   rocketDesign: RocketDesign | null;
+  onSimulationUpdate: (results: SimulationResults) => void;
 }
 
-const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: RocketSimulationProps) => {
+const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign, onSimulationUpdate }: RocketSimulationProps) => {
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationData, setSimulationData] = useState<SimulationData[]>([]);
   const [currentStep, setCurrentStep] = useState(0);
@@ -212,6 +220,31 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign }: R
       return () => clearInterval(interval);
     }
   }, [simulationData, isSimulating]);
+
+  // Update simulation results when simulation completes
+  useEffect(() => {
+    if (simulationData.length > 0 && !isSimulating) {
+      const maxAltitude = Math.max(...simulationData.map(d => d.altitude));
+      const maxVelocity = Math.max(...simulationData.map(d => d.velocity));
+      const flightTime = simulationData[simulationData.length - 1].time;
+      
+      const getPerformanceRating = () => {
+        if (maxAltitude > 100) return 'Excellent';
+        if (maxAltitude > 50) return 'Good';
+        if (maxAltitude > 20) return 'Fair';
+        return 'Needs Work';
+      };
+
+      const results: SimulationResults = {
+        maxAltitude,
+        maxVelocity,
+        flightTime,
+        performanceRating: getPerformanceRating()
+      };
+
+      onSimulationUpdate(results);
+    }
+  }, [simulationData, isSimulating, onSimulationUpdate]);
 
   const maxAltitude = simulationData.length > 0 ? Math.max(...simulationData.map(d => d.altitude)) : 0;
   const maxVelocity = simulationData.length > 0 ? Math.max(...simulationData.map(d => d.velocity)) : 0;
