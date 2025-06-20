@@ -15,12 +15,20 @@ serve(async (req) => {
   }
 
   try {
-    const { rocketDesign, simulationResults } = await req.json();
+    const { rocketDesign, simulationResults, customPrompt } = await req.json();
 
     console.log('Analyzing rocket design:', rocketDesign);
     console.log('Simulation results:', simulationResults);
+    console.log('Custom prompt:', customPrompt);
 
-    const prompt = `As an expert rocket engineer and coach, analyze this model rocket design and simulation results. Provide specific, actionable feedback to help improve performance.
+    let prompt;
+    
+    if (customPrompt) {
+      // Handle chat widget questions
+      prompt = customPrompt;
+    } else {
+      // Handle full analysis requests
+      prompt = `As an expert rocket engineer and coach, analyze this model rocket design and simulation results. Provide specific, actionable feedback to help improve performance.
 
 ROCKET DESIGN:
 - Nose Cone: ${rocketDesign.nose.name} (${rocketDesign.nose.mass}g, drag: ${rocketDesign.nose.drag})
@@ -44,6 +52,7 @@ Please provide:
 4. **Next Steps** (prioritized recommendations)
 
 Keep responses practical for model rocket enthusiasts. Focus on achievable improvements using common rocket parts.`;
+    }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -57,7 +66,7 @@ Keep responses practical for model rocket enthusiasts. Focus on achievable impro
           { role: 'system', content: 'You are an expert rocket engineer and coach specializing in model rockets. Provide detailed, practical advice for improving rocket designs and performance.' },
           { role: 'user', content: prompt }
         ],
-        max_tokens: 800,
+        max_tokens: customPrompt ? 400 : 800,
         temperature: 0.7
       }),
     });

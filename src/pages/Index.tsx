@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import Navigation from '@/components/Navigation';
 import MissionControl from '@/components/MissionControl';
@@ -6,6 +5,7 @@ import LearningModule from '@/components/LearningModule';
 import DragDropRocketBuilder from '@/components/DragDropRocketBuilder';
 import RocketSimulation from '@/components/RocketSimulation';
 import SavedDesigns from '@/components/SavedDesigns';
+import FloatingChatWidget from '@/components/FloatingChatWidget';
 
 interface RocketDesign {
   nose: { name: string; mass: number; drag: number };
@@ -18,6 +18,13 @@ interface RocketDesign {
   stability: number;
 }
 
+interface SimulationResults {
+  maxAltitude: number;
+  maxVelocity: number;
+  flightTime: number;
+  performanceRating: string;
+}
+
 const Index = () => {
   const [currentSection, setCurrentSection] = useState('home');
   const [progress, setProgress] = useState({
@@ -28,6 +35,7 @@ const Index = () => {
     simulationRun: false,
   });
   const [rocketDesign, setRocketDesign] = useState<RocketDesign | null>(null);
+  const [simulationResults, setSimulationResults] = useState<SimulationResults | null>(null);
 
   const handleProgressUpdate = (key: string, value: boolean) => {
     setProgress(prev => ({
@@ -38,6 +46,10 @@ const Index = () => {
 
   const handleRocketUpdate = (rocket: RocketDesign) => {
     setRocketDesign(rocket);
+  };
+
+  const handleSimulationUpdate = (results: SimulationResults) => {
+    setSimulationResults(results);
   };
 
   const renderCurrentSection = () => {
@@ -64,6 +76,7 @@ const Index = () => {
             onSectionChange={setCurrentSection}
             onProgressUpdate={handleProgressUpdate}
             rocketDesign={rocketDesign}
+            onSimulationUpdate={handleSimulationUpdate}
           />
         );
       case 'saved':
@@ -109,6 +122,10 @@ const Index = () => {
         onSectionChange={setCurrentSection}
       />
       {renderCurrentSection()}
+      <FloatingChatWidget 
+        rocketDesign={rocketDesign}
+        simulationResults={simulationResults}
+      />
     </div>
   );
 };
