@@ -1,4 +1,3 @@
-
 import { RocketPart } from '@/types/rocket';
 
 export const noseCones: RocketPart[] = [
@@ -7,7 +6,7 @@ export const noseCones: RocketPart[] = [
     name: 'Cone Nose', 
     mass: 10, 
     drag: 0.5,
-    image: 'https://picsum.photos/200/150?random=1'
+    image: '/pointed-nose-cone.png'
   },
   { 
     type: 'nose', 

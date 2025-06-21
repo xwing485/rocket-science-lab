@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,7 +44,7 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
 
   const parts = {
     nose: [
-      { id: 'pointed-cone', type: 'nose' as const, name: 'Pointed Cone', mass: 10, drag: 0.4 },
+      { id: 'pointed-cone', type: 'nose' as const, name: 'Pointed Cone', mass: 10, drag: 0.4, image: '/pointed-nose-cone.png' },
       { id: 'rounded-cone', type: 'nose' as const, name: 'Rounded Cone', mass: 12, drag: 0.5 },
       { id: 'blunt-cone', type: 'nose' as const, name: 'Blunt Cone', mass: 15, drag: 0.7 }
     ],
@@ -214,14 +213,25 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
                       onDragStart={(e) => handleDragStart(e, part)}
                       className="p-3 border rounded-lg cursor-grab hover:bg-accent/50 transition-colors"
                     >
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium">{part.name}</h4>
-                        <Badge variant="secondary">{part.mass}g</Badge>
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Drag: {part.drag} | 
-                        {part.thrust && ` Thrust: ${part.thrust}N |`}
-                        {part.stability && ` Stability: ${part.stability}`}
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium">{part.name}</h4>
+                          <div className="text-sm text-muted-foreground">
+                            Drag: {part.drag} |
+                            {part.thrust && ` Thrust: ${part.thrust}N |`}
+                            {part.stability && ` Stability: ${part.stability}`}
+                          </div>
+                        </div>
+                        <div className="flex-shrink-0 ml-4 text-right">
+                          {part.image && (
+                            <img
+                              src={part.image}
+                              alt={part.name}
+                              className="w-24 h-24 object-contain rounded bg-muted mb-1"
+                            />
+                          )}
+                          <Badge variant="secondary">{part.mass}g</Badge>
+                        </div>
                       </div>
                     </div>
                   ))}

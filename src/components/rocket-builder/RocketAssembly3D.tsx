@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
@@ -60,18 +59,105 @@ const Rocket3DAssembly = ({ droppedParts, onRemovePart }: { droppedParts: Droppe
     onRemovePart(position);
   };
 
+  // Helper function to get nose cone geometry based on type
+  const getNoseConeGeometry = (nosePart: RocketPart) => {
+    switch (nosePart.name) {
+      case 'Cone Nose':
+        return { args: [0.15, 0.4, 8], color: "#8B5CF6" };
+      case 'Ogive Nose':
+        return { args: [0.12, 0.5, 12], color: "#EC4899" };
+      case 'Parabolic Nose':
+        return { args: [0.18, 0.35, 6], color: "#06B6D4" };
+      default:
+        return { args: [0.15, 0.4, 8], color: "#8B5CF6" };
+    }
+  };
+
+  // Helper function to get fin geometry based on type
+  const getFinGeometry = (finPart: RocketPart) => {
+    switch (finPart.name) {
+      case 'Standard Fins':
+        return {
+          finCount: 4,
+          finSize: { width: 0.03, height: 0.6, depth: 0.3 },
+          color: "#10B981"
+        };
+      case 'Large Fins':
+        return {
+          finCount: 4,
+          finSize: { width: 0.04, height: 0.8, depth: 0.4 },
+          color: "#F59E0B"
+        };
+      case 'Swept Fins':
+        return {
+          finCount: 3,
+          finSize: { width: 0.03, height: 0.7, depth: 0.35 },
+          color: "#EF4444"
+        };
+      default:
+        return {
+          finCount: 4,
+          finSize: { width: 0.03, height: 0.6, depth: 0.3 },
+          color: "#10B981"
+        };
+    }
+  };
+
+  // Helper function to get engine geometry based on type
+  const getEngineGeometry = (enginePart: RocketPart) => {
+    switch (enginePart.name) {
+      case 'A8-3 Engine':
+        return { args: [0.08, 0.15, 0.25, 8], color: "#F97316" };
+      case 'B6-4 Engine':
+        return { args: [0.1, 0.15, 0.3, 8], color: "#DC2626" };
+      case 'C6-5 Engine':
+        return { args: [0.12, 0.15, 0.35, 8], color: "#7C3AED" };
+      default:
+        return { args: [0.1, 0.15, 0.3, 8], color: "#F97316" };
+    }
+  };
+
+  // Helper function to render fins based on type
+  const renderFins = (finPart: RocketPart) => {
+    const config = getFinGeometry(finPart);
+    const fins = [];
+    const angleStep = (2 * Math.PI) / config.finCount;
+
+    for (let i = 0; i < config.finCount; i++) {
+      const angle = i * angleStep;
+      const x = Math.cos(angle) * 0.18;
+      const z = Math.sin(angle) * 0.18;
+      
+      fins.push(
+        <CleanBox 
+          key={i}
+          args={[config.finSize.width, config.finSize.height, config.finSize.depth]} 
+          position={[x, 0, z]}
+          onClick={() => handlePartClick(2)}
+        >
+          <meshPhongMaterial color={config.color} />
+        </CleanBox>
+      );
+    }
+
+    return fins;
+  };
+
   return (
     <group ref={rocketRef}>
       {/* Nose Cone - Position 0 */}
-      {droppedParts[0] && (
-        <CleanCone 
-          args={[0.15, 0.4, 8]} 
-          position={[0, 1.2, 0]}
-          onClick={() => handlePartClick(0)}
-        >
-          <meshPhongMaterial color="#8B5CF6" />
-        </CleanCone>
-      )}
+      {droppedParts[0] && (() => {
+        const config = getNoseConeGeometry(droppedParts[0]);
+        return (
+          <CleanCone 
+            args={config.args} 
+            position={[0, 1.2, 0]}
+            onClick={() => handlePartClick(0)}
+          >
+            <meshPhongMaterial color={config.color} />
+          </CleanCone>
+        );
+      })()}
       
       {/* Body Tube - Position 1 */}
       {droppedParts[1] && (
@@ -85,49 +171,21 @@ const Rocket3DAssembly = ({ droppedParts, onRemovePart }: { droppedParts: Droppe
       )}
       
       {/* Fins - Position 2 */}
-      {droppedParts[2] && (
-        <>
-          <CleanBox 
-            args={[0.03, 0.6, 0.3]} 
-            position={[0.18, 0, 0]}
-            onClick={() => handlePartClick(2)}
-          >
-            <meshPhongMaterial color="#10B981" />
-          </CleanBox>
-          <CleanBox 
-            args={[0.03, 0.6, 0.3]} 
-            position={[-0.18, 0, 0]}
-            onClick={() => handlePartClick(2)}
-          >
-            <meshPhongMaterial color="#10B981" />
-          </CleanBox>
-          <CleanBox 
-            args={[0.3, 0.6, 0.03]} 
-            position={[0, 0, 0.18]}
-            onClick={() => handlePartClick(2)}
-          >
-            <meshPhongMaterial color="#10B981" />
-          </CleanBox>
-          <CleanBox 
-            args={[0.3, 0.6, 0.03]} 
-            position={[0, 0, -0.18]}
-            onClick={() => handlePartClick(2)}
-          >
-            <meshPhongMaterial color="#10B981" />
-          </CleanBox>
-        </>
-      )}
+      {droppedParts[2] && renderFins(droppedParts[2])}
       
       {/* Engine - Position 3 */}
-      {droppedParts[3] && (
-        <CleanCylinder 
-          args={[0.1, 0.15, 0.3, 8]} 
-          position={[0, -0.15, 0]}
-          onClick={() => handlePartClick(3)}
-        >
-          <meshPhongMaterial color="#F97316" />
-        </CleanCylinder>
-      )}
+      {droppedParts[3] && (() => {
+        const config = getEngineGeometry(droppedParts[3]);
+        return (
+          <CleanCylinder 
+            args={config.args} 
+            position={[0, -0.15, 0]}
+            onClick={() => handlePartClick(3)}
+          >
+            <meshPhongMaterial color={config.color} />
+          </CleanCylinder>
+        );
+      })()}
     </group>
   );
 };

@@ -60,6 +60,9 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign, onS
   const rocket = rocketDesign || defaultRocket;
 
   const runSimulation = () => {
+    console.log('=== SIMULATION START ===');
+    console.log('Button clicked, runSimulation called');
+    
     // Validate rocket design before simulation
     if (!rocket || !rocket.engine || !rocket.engine.thrust || rocket.engine.thrust <= 0) {
       console.error('Invalid rocket design: Missing or invalid engine thrust');
@@ -71,26 +74,58 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign, onS
       return;
     }
 
+    console.log('Starting simulation with rocket:', rocket);
+    console.log('Thrust:', rocket.thrust, 'Mass:', rocket.totalMass);
+
     setIsSimulating(true);
     setCurrentStep(0);
     onProgressUpdate('simulationRun', true);
 
-    // Constants
-    const dt = 0.01; // Smaller time step for better accuracy
-    const burnTime = 2.0; // Engine burn time
-    const gravity = 9.81; // m/s²
-    const seaLevelAirDensity = 1.225; // kg/m³
-    const temperatureLapseRate = 0.0065; // K/m
+    // Physical constants
+    const dt = 0.01; // 10ms time step for good balance of accuracy and performance
+    const gravity = 9.80665; // Standard gravity (m/s²)
+    const seaLevelAirDensity = 1.225; // kg/m³ at sea level
+    const temperatureLapseRate = 0.0065; // K/m (standard atmosphere)
     const seaLevelTemperature = 288.15; // K (15°C)
-    const gasConstant = 287.05; // J/(kg·K)
-    const windSpeed = 5; // m/s
-    const windDirection = Math.random() * 2 * Math.PI; // Random wind direction
+    const gasConstant = 287.05; // J/(kg·K) for air
+    const kinematicViscosity = 1.4607e-5; // m²/s at 15°C
     
-    // Rocket parameters with validation
-    const initialMass = Math.max(rocket.totalMass / 1000, 0.001); // Convert to kg, ensure minimum mass
-    const propellantMass = Math.max(rocket.engine.mass * 0.7 / 1000, 0.001); // Assume 70% of engine mass is propellant
-    const massFlowRate = propellantMass / burnTime;
-    const crossSectionalArea = Math.PI * Math.pow(Math.max(rocket.body.diameter / 2000, 0.001), 2); // Convert to m²
+    // Rocket parameters - calculate from individual components
+    const noseMass = rocket.nose.mass / 1000; // kg
+    const bodyMass = rocket.body.mass / 1000; // kg
+    const finsMass = rocket.fins.mass / 1000; // kg
+    const engineMass = rocket.engine.mass / 1000; // kg
+    
+    const initialMass = noseMass + bodyMass + finsMass + engineMass; // Total mass in kg
+    const propellantMass = rocket.engine.mass * 0.75 / 1000; // 75% of engine mass is propellant
+    const dryMass = initialMass - propellantMass; // Mass after burn
+    const massFlowRate = propellantMass / 2.0; // 2-second burn time
+    const burnTime = 2.0; // Engine burn time
+    
+    console.log('Component masses - Nose:', noseMass, 'Body:', bodyMass, 'Fins:', finsMass, 'Engine:', engineMass, 'kg');
+    console.log('Initial mass:', initialMass, 'kg, Dry mass:', dryMass, 'kg');
+    console.log('Propellant mass:', propellantMass, 'kg');
+    
+    // Calculate cross-sectional area (πr²)
+    const rocketRadius = rocket.body.diameter / 2000; // Convert mm to m
+    const crossSectionalArea = Math.PI * rocketRadius * rocketRadius;
+    
+    console.log('Cross-sectional area:', crossSectionalArea, 'm²');
+    
+    // Calculate drag coefficient based on individual components
+    const baseDragCoeff = 0.4; // Higher base drag coefficient for realistic model rocket performance
+    
+    // Component-specific drag contributions
+    const noseDragCoeff = rocket.nose.drag * 0.05; // Nose cone contribution
+    const bodyDragCoeff = 0.1; // Body tube contribution (higher for realistic drag)
+    const finDragCoeff = rocket.fins.drag * 0.15; // Fin contribution (much higher due to surface area)
+    const engineDragCoeff = rocket.engine.drag * 0.02; // Engine contribution
+    
+    // Total drag coefficient
+    const totalDragCoeff = baseDragCoeff + noseDragCoeff + bodyDragCoeff + finDragCoeff + engineDragCoeff;
+    
+    console.log('Drag coefficients - Base:', baseDragCoeff, 'Nose:', noseDragCoeff, 'Body:', bodyDragCoeff, 'Fins:', finDragCoeff, 'Engine:', engineDragCoeff);
+    console.log('Total drag coefficient:', totalDragCoeff);
     
     // Initialize simulation variables
     let time = 0;
@@ -101,85 +136,90 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign, onS
     const data: SimulationData[] = [];
 
     const simulate = () => {
-      // Calculate air density based on altitude using barometric formula
-      const temperature = Math.max(seaLevelTemperature - temperatureLapseRate * altitude, 0.1);
-      const airDensity = seaLevelAirDensity * Math.pow(temperature / seaLevelTemperature, 4.26);
-
-      // Calculate mass change during burn with validation
+      // Calculate atmospheric properties using International Standard Atmosphere
+      const temperature = Math.max(seaLevelTemperature - temperatureLapseRate * altitude, 216.65); // Min temp at tropopause
+      const pressure = 101325 * Math.pow(temperature / seaLevelTemperature, 5.256); // Barometric formula
+      const airDensity = pressure / (gasConstant * temperature);
+      
+      // Calculate current mass (decreasing during burn)
       const currentMass = Math.max(
         time < burnTime 
           ? initialMass - massFlowRate * time 
-          : initialMass - propellantMass,
-        0.001
+          : dryMass,
+        dryMass // Minimum mass (dry mass)
       );
 
-      // Calculate thrust curve (more realistic)
-      const thrust = time < burnTime 
-        ? rocket.thrust * Math.max(1 - Math.pow(time / burnTime, 1.5), 0) // Use N, no multiplier
-        : 0;
+      // Calculate thrust curve (realistic rocket motor curve)
+      let thrust = 0;
+      if (time < burnTime) {
+        // Realistic thrust curve: peak at start, gradual decline
+        const burnProgress = time / burnTime;
+        // More conservative thrust curve for realistic performance
+        thrust = Math.max(rocket.thrust * (0.8 - 0.2 * burnProgress - 0.1 * Math.pow(burnProgress, 2)), rocket.thrust * 0.1);
+      }
 
       // Calculate forces
       const weight = currentMass * gravity;
       
-      // More accurate drag calculation using Reynolds number
-      const kinematicViscosity = 1.5e-5; // m²/s
-      const relativeVelocity = Math.sqrt(Math.pow(velocity, 2) + Math.pow(horizontalVelocity, 2));
-      const reynoldsNumber = Math.max(relativeVelocity * rocket.body.diameter / 1000 / kinematicViscosity, 0.1);
+      // Calculate velocity magnitude and direction
+      const velocityMagnitude = Math.sqrt(velocity * velocity + horizontalVelocity * horizontalVelocity);
       
-      // Base drag coefficient from rocket design with validation
-      const baseDragCoeff = Math.max(rocket.totalDrag * 0.01, 0.001);
+      // Calculate Reynolds number for drag coefficient adjustment
+      const reynoldsNumber = velocityMagnitude * rocket.body.diameter / 1000 / kinematicViscosity;
       
-      // Adjust drag coefficient based on Reynolds number
-      let dragCoeff = baseDragCoeff;
+      // Adjust drag coefficient based on Reynolds number and Mach number
+      let adjustedDragCoeff = totalDragCoeff;
+      
+      // Reynolds number effects
       if (reynoldsNumber < 1000) {
-        dragCoeff *= 1.5; // Laminar flow
+        adjustedDragCoeff *= 1.2; // Laminar flow
       } else if (reynoldsNumber < 100000) {
-        dragCoeff *= 1.2; // Transitional flow
+        adjustedDragCoeff *= 1.05; // Transitional flow
       }
       
-      // Calculate drag force with validation
-      const drag = 0.5 * airDensity * Math.pow(relativeVelocity, 2) * dragCoeff * crossSectionalArea;
+      // Mach number effects (compressibility)
+      const speedOfSound = Math.sqrt(1.4 * gasConstant * temperature); // γ = 1.4 for air
+      const machNumber = velocityMagnitude / speedOfSound;
       
-      // Calculate wind effects (more realistic)
-      const windForce = 0.5 * airDensity * Math.pow(windSpeed, 2) * crossSectionalArea * 0.2;
-      const windForceX = windForce * Math.cos(windDirection);
-      const windForceY = windForce * Math.sin(windDirection);
-
-      // Calculate stability effects with validation
-      const stabilityFactor = Math.max(rocket.stability > 1.5 ? 1 : 0.5, 0.1);
+      if (machNumber > 0.8) {
+        // Compressibility effects
+        adjustedDragCoeff *= (1 + 0.15 * Math.pow(machNumber - 0.8, 2));
+      }
       
-      // Net forces with stability consideration and validation
-      const netVerticalForce = (thrust - weight - drag * (velocity / Math.max(relativeVelocity, 0.1)) + windForceY) * stabilityFactor;
-      const netHorizontalForce = (-drag * (horizontalVelocity / Math.max(relativeVelocity, 0.1)) + windForceX) * stabilityFactor;
-
-      // Update velocities and positions using improved Euler method
+      // Calculate drag force
+      const dragForce = 0.5 * airDensity * velocityMagnitude * velocityMagnitude * adjustedDragCoeff * crossSectionalArea;
+      
+      // Calculate drag components
+      const dragVertical = dragForce * (velocity / Math.max(velocityMagnitude, 0.1));
+      const dragHorizontal = dragForce * (horizontalVelocity / Math.max(velocityMagnitude, 0.1));
+      
+      // Calculate stability effects based on fin design
+      const stabilityMargin = rocket.stability || 1.0;
+      const stabilityFactor = Math.min(Math.max(stabilityMargin / 2.0, 0.5), 1.5);
+      
+      // Calculate net forces
+      const netVerticalForce = thrust - weight - dragVertical;
+      const netHorizontalForce = -dragHorizontal * stabilityFactor;
+      
+      // Calculate accelerations
       const verticalAcceleration = netVerticalForce / currentMass;
       const horizontalAcceleration = netHorizontalForce / currentMass;
       
-      // Update velocities with improved accuracy
-      velocity += verticalAcceleration * dt;
-      horizontalVelocity += horizontalAcceleration * dt;
-      // Cap velocity to a reasonable value (e.g., 200 m/s)
-      velocity = Math.min(velocity, 200);
-      horizontalVelocity = Math.min(horizontalVelocity, 200);
+      // Update velocities using improved Euler method
+      const velocityNew = velocity + verticalAcceleration * dt;
+      const horizontalVelocityNew = horizontalVelocity + horizontalAcceleration * dt;
       
-      // Update positions
-      altitude += velocity * dt;
-      horizontalPosition += horizontalVelocity * dt;
+      // Update positions using midpoint method for better accuracy
+      const altitudeNew = altitude + (velocity + velocityNew) * 0.5 * dt;
+      const horizontalPositionNew = horizontalPosition + (horizontalVelocity + horizontalVelocityNew) * 0.5 * dt;
       
-      // Check if rocket has landed or reached apogee
-      if (altitude < 0) {
-        altitude = 0;
-        velocity = 0;
-        horizontalVelocity = 0;
-      }
-      // Stop simulation if rocket starts descending (apogee)
-      if (velocity < 0 && altitude > 0) {
-        setIsSimulating(false);
-        setSimulationData(data);
-        return;
-      }
+      // Update variables
+      velocity = velocityNew;
+      horizontalVelocity = horizontalVelocityNew;
+      altitude = altitudeNew;
+      horizontalPosition = horizontalPositionNew;
       
+      // Store data point
       data.push({
         time,
         altitude,
@@ -189,37 +229,40 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign, onS
         horizontalVelocity
       });
       
+      // Update simulation data in real-time so 3D component can access it
+      setSimulationData([...data]);
+      setCurrentStep(data.length - 1);
+      
+      // Debug output every 100 steps (1 second)
+      if (Math.floor(time * 100) % 100 === 0) {
+        console.log(`Time: ${time.toFixed(2)}s, Altitude: ${altitude.toFixed(2)}m, Velocity: ${velocity.toFixed(2)}m/s, Thrust: ${thrust.toFixed(2)}N, Net Force: ${netVerticalForce.toFixed(2)}N, Mass: ${currentMass.toFixed(3)}kg`);
+        console.log(`Data points: ${data.length}, Current step: ${data.length - 1}`);
+      }
+      
       time += dt;
       
-      // Continue simulation while rocket is above ground and time < 30s
-      if (altitude > 0 && time < 30) {
+      // Continue simulation conditions - stop at apogee or ground collision
+      const hasReachedApogee = velocity < 0 && altitude > 0; // Negative velocity means falling
+      const hasHitGround = altitude < 0;
+      const timeLimit = time >= 10; // Reduced max time to 10s
+      
+      const shouldContinue = !hasReachedApogee && !hasHitGround && !timeLimit;
+      
+      if (shouldContinue) {
         requestAnimationFrame(simulate);
       } else {
+        let endReason = '';
+        if (hasReachedApogee) endReason = 'apogee reached';
+        else if (hasHitGround) endReason = 'ground collision';
+        else if (timeLimit) endReason = 'time limit';
+        
+        console.log(`Simulation ended: ${endReason}. Final altitude: ${altitude.toFixed(2)}m, Final time: ${time.toFixed(2)}s`);
         setIsSimulating(false);
       }
     };
 
     simulate();
-    setSimulationData(data);
   };
-
-  useEffect(() => {
-    if (simulationData.length > 0 && isSimulating) {
-      const interval = setInterval(() => {
-        setCurrentStep(prev => {
-          const next = prev + 1;
-          if (next >= simulationData.length) {
-            setIsSimulating(false);
-            return prev;
-          }
-          
-          return next;
-        });
-      }, 50);
-
-      return () => clearInterval(interval);
-    }
-  }, [simulationData, isSimulating]);
 
   // Update simulation results when simulation completes
   useEffect(() => {
@@ -229,10 +272,15 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign, onS
       const flightTime = simulationData[simulationData.length - 1].time;
       
       const getPerformanceRating = () => {
-        if (maxAltitude > 100) return 'Excellent';
-        if (maxAltitude > 50) return 'Good';
-        if (maxAltitude > 20) return 'Fair';
-        return 'Needs Work';
+        // Realistic model rocket performance ratings
+        const thrustToWeight = rocket.thrust / (rocket.totalMass / 1000 * 9.80665);
+        
+        if (maxAltitude > 200 && thrustToWeight > 5) return 'Outstanding';
+        if (maxAltitude > 150 && thrustToWeight > 3) return 'Excellent';
+        if (maxAltitude > 100 && thrustToWeight > 2) return 'Good';
+        if (maxAltitude > 50 && thrustToWeight > 1.5) return 'Fair';
+        if (maxAltitude > 20) return 'Poor';
+        return 'Failed';
       };
 
       const results: SimulationResults = {
@@ -244,19 +292,37 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign, onS
 
       onSimulationUpdate(results);
     }
-  }, [simulationData, isSimulating, onSimulationUpdate]);
+  }, [simulationData, isSimulating, onSimulationUpdate, rocket]);
 
   const maxAltitude = simulationData.length > 0 ? Math.max(...simulationData.map(d => d.altitude)) : 0;
   const maxVelocity = simulationData.length > 0 ? Math.max(...simulationData.map(d => d.velocity)) : 0;
   const flightTime = simulationData.length > 0 ? simulationData[simulationData.length - 1].time : 0;
 
-  const currentData = simulationData[currentStep] || { time: 0, altitude: 0, velocity: 0, acceleration: 0, horizontalPosition: 0, horizontalVelocity: 0 };
+  // Use actual simulation data if available, otherwise use fallback
+  const currentData = simulationData.length > 0 && simulationData[currentStep] 
+    ? simulationData[currentStep] 
+    : { time: 0, altitude: 0, velocity: 0, acceleration: 0, horizontalPosition: 0, horizontalVelocity: 0 };
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log('Simulation state:', {
+      simulationDataLength: simulationData.length,
+      currentStep,
+      isSimulating,
+      currentData,
+      hasCurrentData: simulationData.length > 0 && simulationData[currentStep]
+    });
+  }, [simulationData.length, currentStep, isSimulating, currentData]);
 
   const getPerformanceRating = () => {
-    if (maxAltitude > 100) return { rating: 'Excellent', color: 'text-accent' };
-    if (maxAltitude > 50) return { rating: 'Good', color: 'text-primary' };
-    if (maxAltitude > 20) return { rating: 'Fair', color: 'text-secondary' };
-    return { rating: 'Needs Work', color: 'text-destructive' };
+    const thrustToWeight = rocket.thrust / (rocket.totalMass / 1000 * 9.80665);
+    
+    if (maxAltitude > 200 && thrustToWeight > 5) return { rating: 'Outstanding', color: 'text-green-600' };
+    if (maxAltitude > 150 && thrustToWeight > 3) return { rating: 'Excellent', color: 'text-green-500' };
+    if (maxAltitude > 100 && thrustToWeight > 2) return { rating: 'Good', color: 'text-blue-500' };
+    if (maxAltitude > 50 && thrustToWeight > 1.5) return { rating: 'Fair', color: 'text-yellow-500' };
+    if (maxAltitude > 20) return { rating: 'Poor', color: 'text-orange-500' };
+    return { rating: 'Failed', color: 'text-red-500' };
   };
 
   const performanceRating = getPerformanceRating();
@@ -280,18 +346,17 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign, onS
         </div>
 
         <div className="grid lg:grid-cols-2 gap-6">
-          {/* 3D Visualization Panel */}
-          <Card className="lg:row-span-2">
+          {/* 3D Rocket Visualization */}
+          <Card className="mt-6">
             <CardHeader>
-              <CardTitle>3D Launch Visualization</CardTitle>
-              <CardDescription>
-                Interactive 3D rocket simulation - drag to rotate, scroll to zoom
-              </CardDescription>
+              <CardTitle>3D Rocket Visualization</CardTitle>
+              <CardDescription>Watch your rocket launch in real-time</CardDescription>
             </CardHeader>
             <CardContent>
               <Rocket3DVisualization 
-                currentData={currentData}
+                currentData={currentData} 
                 isSimulating={isSimulating}
+                rocketDesign={rocket}
               />
             </CardContent>
           </Card>

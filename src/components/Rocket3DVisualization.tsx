@@ -1,6 +1,5 @@
-
 import React, { useRef, useEffect } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 
@@ -13,9 +12,21 @@ interface SimulationData {
   horizontalVelocity: number;
 }
 
+interface RocketDesign {
+  nose: { name: string; mass: number; drag: number };
+  body: { diameter: number; length: number; mass: number };
+  fins: { name: string; mass: number; drag: number; stability?: number };
+  engine: { name: string; mass: number; drag: number; thrust?: number };
+  totalMass: number;
+  totalDrag: number;
+  thrust: number;
+  stability: number;
+}
+
 interface Rocket3DProps {
   currentData: SimulationData;
   isSimulating: boolean;
+  rocketDesign?: RocketDesign;
 }
 
 // Clean wrapper components to avoid attribute conflicts
@@ -55,16 +66,33 @@ const CleanBox = React.forwardRef<any, any>((props, ref) => {
   );
 });
 
-const Rocket3D = ({ currentData, isSimulating }: Rocket3DProps) => {
+const Rocket3D = ({ currentData, isSimulating, rocketDesign }: Rocket3DProps) => {
   const rocketRef = useRef<THREE.Group>(null);
   const flameRef = useRef<THREE.Group>(null);
 
+  // Debug logging
+  React.useEffect(() => {
+    console.log('Rocket3D received data:', currentData);
+    console.log('Is simulating:', isSimulating);
+  }, [currentData, isSimulating]);
+
   useFrame(() => {
     if (rocketRef.current) {
-      rocketRef.current.position.x = currentData.horizontalPosition / 10;
-      rocketRef.current.position.y = currentData.altitude / 10;
+      // Scale down the movement to be visible in the 3D space
+      // For model rockets, typical altitudes are 50-200m, so scale accordingly
+      const scaleFactor = 0.05; // Scale down by 20x to make movement visible
+      const newX = currentData.horizontalPosition * scaleFactor;
+      const newY = currentData.altitude * scaleFactor;
+      
+      rocketRef.current.position.x = newX;
+      rocketRef.current.position.y = newY;
       rocketRef.current.position.z = 0;
-      rocketRef.current.rotation.z = currentData.horizontalVelocity * 0.01;
+      rocketRef.current.rotation.z = currentData.horizontalVelocity * 0.005; // Reduced rotation
+      
+      // Debug position every 50 frames
+      if (Math.floor(Date.now() / 100) % 50 === 0) {
+        console.log(`Rocket position: x=${newX.toFixed(3)}, y=${newY.toFixed(3)}, altitude=${currentData.altitude.toFixed(2)}m`);
+      }
     }
 
     if (flameRef.current) {
@@ -77,57 +105,122 @@ const Rocket3D = ({ currentData, isSimulating }: Rocket3DProps) => {
     }
   });
 
+  // Helper function to get nose cone geometry based on type
+  const getNoseConeGeometry = (nosePart: any) => {
+    switch (nosePart?.name) {
+      case 'Cone Nose':
+        return { args: [0.15, 0.4, 8], color: "#8B5CF6" };
+      case 'Ogive Nose':
+        return { args: [0.12, 0.5, 12], color: "#EC4899" };
+      case 'Parabolic Nose':
+        return { args: [0.18, 0.35, 6], color: "#06B6D4" };
+      default:
+        return { args: [0.15, 0.4, 8], color: "#8B5CF6" };
+    }
+  };
+
+  // Helper function to get fin geometry based on type
+  const getFinGeometry = (finPart: any) => {
+    switch (finPart?.name) {
+      case 'Standard Fins':
+        return {
+          finCount: 4,
+          finSize: { width: 0.03, height: 0.6, depth: 0.3 },
+          color: "#10B981"
+        };
+      case 'Large Fins':
+        return {
+          finCount: 4,
+          finSize: { width: 0.04, height: 0.8, depth: 0.4 },
+          color: "#F59E0B"
+        };
+      case 'Swept Fins':
+        return {
+          finCount: 3,
+          finSize: { width: 0.03, height: 0.7, depth: 0.35 },
+          color: "#EF4444"
+        };
+      default:
+        return {
+          finCount: 4,
+          finSize: { width: 0.03, height: 0.6, depth: 0.3 },
+          color: "#10B981"
+        };
+    }
+  };
+
+  // Helper function to get engine geometry based on type
+  const getEngineGeometry = (enginePart: any) => {
+    switch (enginePart?.name) {
+      case 'A8-3 Engine':
+        return { args: [0.08, 0.15, 0.25, 8], color: "#F97316" };
+      case 'B6-4 Engine':
+        return { args: [0.1, 0.15, 0.3, 8], color: "#DC2626" };
+      case 'C6-5 Engine':
+        return { args: [0.12, 0.15, 0.35, 8], color: "#7C3AED" };
+      default:
+        return { args: [0.1, 0.15, 0.3, 8], color: "#F97316" };
+    }
+  };
+
+  // Helper function to render fins based on type
+  const renderFins = (finPart: any) => {
+    const config = getFinGeometry(finPart);
+    const fins = [];
+    const angleStep = (2 * Math.PI) / config.finCount;
+
+    for (let i = 0; i < config.finCount; i++) {
+      const angle = i * angleStep;
+      const x = Math.cos(angle) * 0.18;
+      const z = Math.sin(angle) * 0.18;
+      
+      fins.push(
+        <CleanBox 
+          key={i}
+          args={[config.finSize.width, config.finSize.height, config.finSize.depth]} 
+          position={[x, 0, z]}
+        >
+          <meshPhongMaterial color={config.color} />
+        </CleanBox>
+      );
+    }
+
+    return fins;
+  };
+
+  // Use rocket design if provided, otherwise use default
+  const noseConfig = getNoseConeGeometry(rocketDesign?.nose);
+  const engineConfig = getEngineGeometry(rocketDesign?.engine);
+
   return (
     <group ref={rocketRef}>
-      <CleanCone args={[0.15, 0.4, 8]} position={[0, 1, 0]}>
-        <meshPhongMaterial color="#8B5CF6" />
+      {/* Nose Cone */}
+      <CleanCone args={noseConfig.args} position={[0, 1.2, 0]}>
+        <meshPhongMaterial color={noseConfig.color} />
       </CleanCone>
       
-      <CleanCylinder args={[0.15, 0.15, 0.8, 8]} position={[0, 0.2, 0]}>
+      {/* Body Tube */}
+      <CleanCylinder args={[0.15, 0.15, 0.8, 8]} position={[0, 0.4, 0]}>
         <meshPhongMaterial color="#FFFFFF" />
       </CleanCylinder>
       
-      <CleanCylinder args={[0.15, 0.15, 0.6, 8]} position={[0, -0.5, 0]}>
-        <meshPhongMaterial color="#10B981" />
+      {/* Fins */}
+      {rocketDesign?.fins && renderFins(rocketDesign.fins)}
+      
+      {/* Engine */}
+      <CleanCylinder args={engineConfig.args} position={[0, -0.15, 0]}>
+        <meshPhongMaterial color={engineConfig.color} />
       </CleanCylinder>
       
-      <CleanCylinder args={[0.08, 0.08, 1.2, 8]} position={[0.25, -0.2, 0]}>
-        <meshPhongMaterial color="#10B981" />
-      </CleanCylinder>
-      <CleanCylinder args={[0.08, 0.08, 1.2, 8]} position={[-0.25, -0.2, 0]}>
-        <meshPhongMaterial color="#10B981" />
-      </CleanCylinder>
-      
-      <CleanCylinder args={[0.06, 0.08, 0.2, 8]} position={[0.25, -0.9, 0]}>
-        <meshPhongMaterial color="#F97316" />
-      </CleanCylinder>
-      <CleanCylinder args={[0.06, 0.08, 0.2, 8]} position={[-0.25, -0.9, 0]}>
-        <meshPhongMaterial color="#F97316" />
-      </CleanCylinder>
-      
-      <CleanCylinder args={[0.1, 0.15, 0.3, 8]} position={[0, -1, 0]}>
-        <meshPhongMaterial color="#F97316" />
-      </CleanCylinder>
-      
-      <group ref={flameRef} position={[0, -1.3, 0]}>
-        <CleanCone args={[0.1, 0.8, 8]} position={[0, 0, 0]}>
+      {/* Engine Flame */}
+      <group ref={flameRef} position={[0, -0.15 - engineConfig.args[2]/2, 0]}>
+        <CleanCone args={[engineConfig.args[0], 0.8, 8]} position={[0, 0, 0]}>
           <meshBasicMaterial color="#FFD700" transparent opacity={0.8} />
         </CleanCone>
-        <CleanCone args={[0.06, 1.2, 8]} position={[0, 0, 0]}>
+        <CleanCone args={[engineConfig.args[0] * 0.6, 1.2, 8]} position={[0, 0, 0]}>
           <meshBasicMaterial color="#FF4500" transparent opacity={0.6} />
         </CleanCone>
       </group>
-      
-      {isSimulating && currentData.time < 2 && (
-        <>
-          <CleanCone args={[0.04, 0.6, 8]} position={[0.25, -1.1, 0]}>
-            <meshBasicMaterial color="#FFD700" transparent opacity={0.7} />
-          </CleanCone>
-          <CleanCone args={[0.04, 0.6, 8]} position={[-0.25, -1.1, 0]}>
-            <meshBasicMaterial color="#FFD700" transparent opacity={0.7} />
-          </CleanCone>
-        </>
-      )}
     </group>
   );
 };
@@ -203,7 +296,34 @@ const Clouds = () => {
   );
 };
 
-const Rocket3DVisualization = ({ currentData, isSimulating }: Rocket3DProps) => {
+// Custom camera component that follows the rocket
+const FollowCamera = ({ currentData, isSimulating }: { currentData: SimulationData; isSimulating: boolean }) => {
+  const { camera } = useThree();
+  
+  useFrame(() => {
+    if (isSimulating) {
+      const scaleFactor = 0.05;
+      const rocketX = currentData.horizontalPosition * scaleFactor;
+      const rocketY = currentData.altitude * scaleFactor;
+      
+      // Better camera positioning for launch view
+      const cameraX = rocketX + 3; // Closer to rocket
+      const cameraY = Math.max(rocketY * 0.5 + 1, 0.5); // Lower height, follow rocket but stay lower
+      const cameraZ = 6; // Closer distance
+      
+      // Update camera position
+      camera.position.set(cameraX, cameraY, cameraZ);
+      
+      // Look slightly above the rocket for better launch view
+      camera.lookAt(rocketX, rocketY + 0.5, 0);
+    }
+    // Don't override camera when not simulating - let OrbitControls handle it
+  });
+  
+  return null;
+};
+
+const Rocket3DVisualization = ({ currentData, isSimulating, rocketDesign }: Rocket3DProps) => {
   return (
     <div className="w-full h-[600px] bg-gradient-to-b from-blue-900 to-blue-300 rounded-lg overflow-hidden relative">
       <Canvas
@@ -226,7 +346,8 @@ const Rocket3DVisualization = ({ currentData, isSimulating }: Rocket3DProps) => 
         />
         <pointLight position={[0, 5, 0]} intensity={0.5} />
 
-        <Rocket3D currentData={currentData} isSimulating={isSimulating} />
+        <FollowCamera currentData={currentData} isSimulating={isSimulating} />
+        <Rocket3D currentData={currentData} isSimulating={isSimulating} rocketDesign={rocketDesign} />
         <LaunchPad />
         <Ground />
         <Clouds />
@@ -234,9 +355,9 @@ const Rocket3DVisualization = ({ currentData, isSimulating }: Rocket3DProps) => 
         <gridHelper args={[20, 20, '#666666', '#666666']} position={[0, -2, 0]} />
 
         <OrbitControls
-          enablePan={true}
-          enableZoom={true}
-          enableRotate={true}
+          enablePan={!isSimulating}
+          enableZoom={!isSimulating}
+          enableRotate={!isSimulating}
           minDistance={3}
           maxDistance={50}
           minPolarAngle={0}
