@@ -1,8 +1,9 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Rocket, Save, Play } from 'lucide-react';
+import { Rocket, Save, Play, Eye, EyeOff } from 'lucide-react';
 import { useRocketDesigns } from '@/hooks/useRocketDesigns';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -36,6 +37,7 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
   const [activeTab, setActiveTab] = useState<'nose' | 'body' | 'fins' | 'engine'>('nose');
   const [draggedPart, setDraggedPart] = useState<RocketPart | null>(null);
   const [droppedParts, setDroppedParts] = useState<{ [key: number]: RocketPart }>({});
+  const [show3DModel, setShow3DModel] = useState(false);
   const { saveDesign } = useRocketDesigns();
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [designName, setDesignName] = useState('');
@@ -230,20 +232,55 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
             </Card>
           </div>
 
-          {/* 3D Rocket Assembly Area */}
+          {/* Rocket Assembly Area */}
           <div className="lg:col-span-1">
             <Card>
               <CardHeader>
                 <CardTitle>Rocket Assembly Area</CardTitle>
-                <CardDescription>Watch your rocket come to life in 3D</CardDescription>
+                <CardDescription>
+                  {show3DModel ? "Interactive 3D view of your rocket" : "Drop parts here to build your rocket"}
+                </CardDescription>
               </CardHeader>
               <CardContent className="p-2">
-                <RocketAssembly3D
-                  droppedParts={droppedParts}
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop}
-                  onRemovePart={removePart}
-                />
+                {show3DModel ? (
+                  <RocketAssembly3D
+                    droppedParts={droppedParts}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    onRemovePart={removePart}
+                  />
+                ) : (
+                  <div 
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => {
+                      // Handle drop on main area - determine position based on coordinates
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const y = e.clientY - rect.top;
+                      const height = rect.height;
+                      const position = Math.floor((y / height) * 4);
+                      handleDrop(e, Math.min(position, 3));
+                    }}
+                    className="h-[400px] bg-gradient-to-b from-blue-900 to-blue-300 rounded-lg border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center text-white"
+                  >
+                    <div className="text-center">
+                      <Rocket className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <h3 className="text-lg font-semibold mb-2">Start Building</h3>
+                      <p className="text-sm opacity-80 mb-4">Drag rocket parts here</p>
+                      
+                      {Object.keys(droppedParts).length > 0 && (
+                        <div className="space-y-2">
+                          <div className="text-sm font-medium">Added Parts:</div>
+                          <div className="space-y-1">
+                            {droppedParts[0] && <div className="text-xs">• {droppedParts[0].name}</div>}
+                            {droppedParts[1] && <div className="text-xs">• {droppedParts[1].name}</div>}
+                            {droppedParts[2] && <div className="text-xs">• {droppedParts[2].name}</div>}
+                            {droppedParts[3] && <div className="text-xs">• {droppedParts[3].name}</div>}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {!isComplete && (
                   <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
@@ -295,6 +332,16 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
                   </div>
 
                   <div className="pt-4 border-t space-y-3">
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => setShow3DModel(!show3DModel)}
+                      disabled={Object.keys(droppedParts).length === 0}
+                    >
+                      {show3DModel ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
+                      {show3DModel ? 'Hide 3D Model' : 'View 3D Model'}
+                    </Button>
+                    
                     <Button 
                       variant="outline" 
                       className="w-full"
