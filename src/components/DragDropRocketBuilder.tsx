@@ -24,7 +24,7 @@ interface RocketPart {
 }
 
 interface DroppedPart extends RocketPart {
-  position: number; // 0 = nose, 1 = body, 2 = fins, 3 = engine
+  position: number;
 }
 
 interface DragDropRocketBuilderProps {
@@ -104,7 +104,6 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
   const isComplete = Object.keys(droppedParts).length === 4;
 
   const handleSaveDesign = async () => {
-    // Extract diameter and length for body, or use defaults if missing
     const bodyPart = droppedParts[1] || { mass: 0, diameter: 24, length: 200 };
     const diameter = bodyPart.diameter || 24;
     const length = bodyPart.length || 200;
@@ -184,7 +183,6 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
-          {/* Parts Palette */}
           <div className="lg:col-span-1">
             <Card>
               <CardHeader>
@@ -232,13 +230,12 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
             </Card>
           </div>
 
-          {/* Rocket Assembly Area */}
           <div className="lg:col-span-1">
             <Card>
               <CardHeader>
                 <CardTitle>Rocket Assembly Area</CardTitle>
                 <CardDescription>
-                  {show3DModel ? "Interactive 3D view of your rocket" : "Drop parts here to build your rocket"}
+                  Drop parts here to build your rocket
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-2">
@@ -253,7 +250,6 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
                   <div 
                     onDragOver={handleDragOver}
                     onDrop={(e) => {
-                      // Handle drop on main area - determine position based on coordinates
                       const rect = e.currentTarget.getBoundingClientRect();
                       const y = e.clientY - rect.top;
                       const height = rect.height;
@@ -297,7 +293,6 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
             </Card>
           </div>
 
-          {/* Rocket Statistics */}
           <div className="lg:col-span-1">
             <Card>
               <CardHeader>
