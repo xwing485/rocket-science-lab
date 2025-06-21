@@ -247,32 +247,85 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
                     onRemovePart={removePart}
                   />
                 ) : (
-                  <div 
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => {
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      const y = e.clientY - rect.top;
-                      const height = rect.height;
-                      const position = Math.floor((y / height) * 4);
-                      handleDrop(e, Math.min(position, 3));
-                    }}
-                    className="h-[400px] bg-gradient-to-b from-blue-900 to-blue-300 rounded-lg border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center text-white"
-                  >
-                    <div className="text-center">
-                      <Rocket className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <h3 className="text-lg font-semibold mb-2">Start Building</h3>
-                      <p className="text-sm opacity-80 mb-4">Drag rocket parts here</p>
-                      
-                      {Object.keys(droppedParts).length > 0 && (
-                        <div className="space-y-2">
-                          <div className="text-sm font-medium">Added Parts:</div>
-                          <div className="space-y-1">
-                            {droppedParts[0] && <div className="text-xs">• {droppedParts[0].name}</div>}
-                            {droppedParts[1] && <div className="text-xs">• {droppedParts[1].name}</div>}
-                            {droppedParts[2] && <div className="text-xs">• {droppedParts[2].name}</div>}
-                            {droppedParts[3] && <div className="text-xs">• {droppedParts[3].name}</div>}
-                          </div>
+                  <div className="h-[400px] bg-gradient-to-b from-blue-900 to-blue-300 rounded-lg border-2 border-dashed border-muted-foreground/30 relative">
+                    {/* Drop zones for original interface */}
+                    <div 
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, 0)}
+                      className="absolute top-2 left-2 right-2 h-20 border-2 border-dashed border-white/30 rounded-lg flex items-center justify-center text-white text-sm hover:bg-white/10 transition-colors"
+                    >
+                      {droppedParts[0] ? (
+                        <div className="text-center">
+                          <div className="font-medium">{droppedParts[0].name}</div>
+                          <button 
+                            onClick={() => removePart(0)}
+                            className="text-xs text-red-300 hover:text-red-100"
+                          >
+                            Remove
+                          </button>
                         </div>
+                      ) : (
+                        'Drop Nose Cone Here'
+                      )}
+                    </div>
+
+                    <div 
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, 1)}
+                      className="absolute top-24 left-2 right-2 h-32 border-2 border-dashed border-white/30 rounded-lg flex items-center justify-center text-white text-sm hover:bg-white/10 transition-colors"
+                    >
+                      {droppedParts[1] ? (
+                        <div className="text-center">
+                          <div className="font-medium">{droppedParts[1].name}</div>
+                          <button 
+                            onClick={() => removePart(1)}
+                            className="text-xs text-red-300 hover:text-red-100"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ) : (
+                        'Drop Body Tube Here'
+                      )}
+                    </div>
+
+                    <div 
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, 2)}
+                      className="absolute top-60 left-2 right-2 h-20 border-2 border-dashed border-white/30 rounded-lg flex items-center justify-center text-white text-sm hover:bg-white/10 transition-colors"
+                    >
+                      {droppedParts[2] ? (
+                        <div className="text-center">
+                          <div className="font-medium">{droppedParts[2].name}</div>
+                          <button 
+                            onClick={() => removePart(2)}
+                            className="text-xs text-red-300 hover:text-red-100"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ) : (
+                        'Drop Fins Here'
+                      )}
+                    </div>
+
+                    <div 
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, 3)}
+                      className="absolute bottom-2 left-2 right-2 h-20 border-2 border-dashed border-white/30 rounded-lg flex items-center justify-center text-white text-sm hover:bg-white/10 transition-colors"
+                    >
+                      {droppedParts[3] ? (
+                        <div className="text-center">
+                          <div className="font-medium">{droppedParts[3].name}</div>
+                          <button 
+                            onClick={() => removePart(3)}
+                            className="text-xs text-red-300 hover:text-red-100"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ) : (
+                        'Drop Engine Here'
                       )}
                     </div>
                   </div>
