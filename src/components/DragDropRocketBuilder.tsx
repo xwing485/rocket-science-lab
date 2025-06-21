@@ -7,6 +7,7 @@ import { useRocketDesigns } from '@/hooks/useRocketDesigns';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import RocketAssembly3D from './rocket-builder/RocketAssembly3D';
 
 interface RocketPart {
   id: string;
@@ -229,114 +230,20 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
             </Card>
           </div>
 
-          {/* Rocket Assembly Area */}
+          {/* 3D Rocket Assembly Area */}
           <div className="lg:col-span-1">
             <Card>
               <CardHeader>
                 <CardTitle>Rocket Assembly Area</CardTitle>
+                <CardDescription>Watch your rocket come to life in 3D</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {/* Nose Cone */}
-                  <div
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, 0)}
-                    className="h-20 border-2 border-dashed border-muted-foreground/30 rounded-lg flex items-center justify-center relative hover:border-primary/50 transition-colors"
-                  >
-                    {droppedParts[0] ? (
-                      <div className="text-center">
-                        <div className="font-medium">{droppedParts[0].name}</div>
-                        <div className="text-sm text-muted-foreground">Nose Cone</div>
-                        <button
-                          onClick={() => removePart(0)}
-                          className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full text-xs"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="text-center text-muted-foreground">
-                        <div className="font-medium">Nose Cone</div>
-                        <div className="text-sm">Drop part here</div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Body Tube */}
-                  <div
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, 1)}
-                    className="h-32 border-2 border-dashed border-muted-foreground/30 rounded-lg flex items-center justify-center relative hover:border-primary/50 transition-colors"
-                  >
-                    {droppedParts[1] ? (
-                      <div className="text-center">
-                        <div className="font-medium">{droppedParts[1].name}</div>
-                        <div className="text-sm text-muted-foreground">Body Tube</div>
-                        <button
-                          onClick={() => removePart(1)}
-                          className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full text-xs"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="text-center text-muted-foreground">
-                        <div className="font-medium">Body Tube</div>
-                        <div className="text-sm">Drop part here</div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Fins */}
-                  <div
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, 2)}
-                    className="h-20 border-2 border-dashed border-muted-foreground/30 rounded-lg flex items-center justify-center relative hover:border-primary/50 transition-colors"
-                  >
-                    {droppedParts[2] ? (
-                      <div className="text-center">
-                        <div className="font-medium">{droppedParts[2].name}</div>
-                        <div className="text-sm text-muted-foreground">Fins</div>
-                        <button
-                          onClick={() => removePart(2)}
-                          className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full text-xs"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="text-center text-muted-foreground">
-                        <div className="font-medium">Fins</div>
-                        <div className="text-sm">Drop part here</div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Engine */}
-                  <div
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, 3)}
-                    className="h-16 border-2 border-dashed border-muted-foreground/30 rounded-lg flex items-center justify-center relative hover:border-primary/50 transition-colors"
-                  >
-                    {droppedParts[3] ? (
-                      <div className="text-center">
-                        <div className="font-medium">{droppedParts[3].name}</div>
-                        <div className="text-sm text-muted-foreground">Engine</div>
-                        <button
-                          onClick={() => removePart(3)}
-                          className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-destructive-foreground rounded-full text-xs"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="text-center text-muted-foreground">
-                        <div className="font-medium">Engine</div>
-                        <div className="text-sm">Drop part here</div>
-                      </div>
-                    )}
-                  </div>
-                </div>
+              <CardContent className="p-2">
+                <RocketAssembly3D
+                  droppedParts={droppedParts}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  onRemovePart={removePart}
+                />
 
                 {!isComplete && (
                   <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
