@@ -99,7 +99,7 @@ Focus on actionable recommendations using the specific parts available in the in
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: 'You are an expert rocket engineer and coach specializing in model rockets. Provide detailed, practical advice for improving rocket designs and performance using available parts and historical design data.' },
           { role: 'user', content: prompt }
