@@ -189,7 +189,7 @@ const Rocket3DAssembly = ({ droppedParts, onRemovePart }: { droppedParts: Droppe
   };
 
   return (
-    <group ref={rocketRef}>
+    <group ref={rocketRef} scale={[40, 40, 40]}>
       {/* Calculate Y positions for stacking */}
       {(() => {
         // Get geometry for each part

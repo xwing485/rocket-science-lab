@@ -223,7 +223,7 @@ const Rocket3D = ({ currentData, isSimulating, rocketDesign }: Rocket3DProps) =>
   const engineConfig = getEngineGeometry(rocketDesign?.engine);
 
   return (
-    <group ref={rocketRef}>
+    <group ref={rocketRef} scale={[40, 40, 40]}>
       {/* Nose Cone */}
       <CleanCone args={noseConfig.args} position={[0, 1.2, 0]}>
         <meshPhongMaterial color={noseConfig.color} />
