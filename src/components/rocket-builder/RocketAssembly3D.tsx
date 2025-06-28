@@ -165,79 +165,86 @@ const Rocket3DAssembly = ({ droppedParts, onRemovePart }: { droppedParts: Droppe
   };
 
   // Helper function to render fins based on type
-  const renderFins = (finPart: RocketPart) => {
+  const renderFins = (finPart: RocketPart, yPos: number) => {
     const config = getFinGeometry(finPart);
     const fins = [];
     const angleStep = (2 * Math.PI) / config.finCount;
-    
-    // Use the body tube radius for proper fin attachment
     const bodyRadius = 12 * 0.001; // 12mm radius in meters
-
     for (let i = 0; i < config.finCount; i++) {
       const angle = i * angleStep;
       const x = Math.cos(angle) * bodyRadius;
       const z = Math.sin(angle) * bodyRadius;
-      
       fins.push(
-        <CleanBox 
+        <CleanBox
           key={i}
-          args={[config.finSize.width, config.finSize.height, config.finSize.depth]} 
-          position={[x, 0, z]}
+          args={[config.finSize.width, config.finSize.height, config.finSize.depth]}
+          position={[x, yPos, z]}
           onClick={() => handlePartClick(2)}
         >
           <meshPhongMaterial color={config.color} />
         </CleanBox>
       );
     }
-
     return fins;
   };
 
   return (
     <group ref={rocketRef}>
-      {/* Nose Cone - Position 0 */}
-      {droppedParts[0] && (() => {
-        const config = getNoseConeGeometry(droppedParts[0]);
-        return (
-          <CleanCone 
-            args={config.args} 
-            position={[0, 1.2, 0]}
-            onClick={() => handlePartClick(0)}
-          >
-            <meshPhongMaterial color={config.color} />
-          </CleanCone>
-        );
-      })()}
-      
-      {/* Body Tube - Position 1 */}
-      {droppedParts[1] && (() => {
-        const config = getBodyTubeGeometry(droppedParts[1]);
-        return (
-          <CleanCylinder 
-            args={config.args} 
-            position={[0, 0.4, 0]}
-            onClick={() => handlePartClick(1)}
-          >
-            <meshPhongMaterial color={config.color} />
-          </CleanCylinder>
-        );
-      })()}
-      
-      {/* Fins - Position 2 */}
-      {droppedParts[2] && renderFins(droppedParts[2])}
-      
-      {/* Engine - Position 3 */}
-      {droppedParts[3] && (() => {
-        const config = getEngineGeometry(droppedParts[3]);
-        return (
-          <CleanCylinder 
-            args={config.args} 
-            position={[0, -0.15, 0]}
-            onClick={() => handlePartClick(3)}
-          >
-            <meshPhongMaterial color={config.color} />
-          </CleanCylinder>
-        );
+      {/* Calculate Y positions for stacking */}
+      {(() => {
+        // Get geometry for each part
+        const nose = droppedParts[0] ? getNoseConeGeometry(droppedParts[0]) : null;
+        const body = droppedParts[1] ? getBodyTubeGeometry(droppedParts[1]) : null;
+        const engine = droppedParts[3] ? getEngineGeometry(droppedParts[3]) : null;
+        // Heights
+        const noseHeight = nose ? nose.args[1] : 0;
+        const bodyHeight = body ? body.args[2] : 0;
+        const engineHeight = engine ? engine.args[2] : 0;
+        // Y positions (stack from bottom up)
+        let y = 0;
+        // Engine (bottom)
+        let engineY = y + engineHeight / 2;
+        y += engineHeight;
+        // Body
+        let bodyY = y + bodyHeight / 2;
+        y += bodyHeight;
+        // Nose
+        let noseY = y + noseHeight / 2;
+        // Render parts
+        return <>
+          {/* Engine - Position 3 */}
+          {engine && (
+            <CleanCylinder
+              args={engine.args}
+              position={[0, engineY, 0]}
+              onClick={() => handlePartClick(3)}
+            >
+              <meshPhongMaterial color={engine.color} />
+            </CleanCylinder>
+          )}
+          {/* Body Tube - Position 1 */}
+          {body && (
+            <CleanCylinder
+              args={body.args}
+              position={[0, bodyY, 0]}
+              onClick={() => handlePartClick(1)}
+            >
+              <meshPhongMaterial color={body.color} />
+            </CleanCylinder>
+          )}
+          {/* Nose Cone - Position 0 */}
+          {nose && (
+            <CleanCone
+              args={nose.args}
+              position={[0, noseY, 0]}
+              onClick={() => handlePartClick(0)}
+            >
+              <meshPhongMaterial color={nose.color} />
+            </CleanCone>
+          )}
+          {/* Fins - Position 2 (attach to bottom of body) */}
+          {droppedParts[2] && body && renderFins(droppedParts[2], bodyY - bodyHeight / 2)}
+        </>;
       })()}
     </group>
   );
