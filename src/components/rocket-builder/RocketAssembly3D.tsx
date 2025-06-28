@@ -190,6 +190,13 @@ const Rocket3DAssembly = ({ droppedParts, onRemovePart }: { droppedParts: Droppe
 
   return (
     <group ref={rocketRef} scale={[40, 40, 40]}>
+      {/* DEBUG: Always render a large magenta body tube at the origin */}
+      <CleanCylinder
+        args={[0.2, 0.2, 1.5, 16]}
+        position={[0, 0, 0]}
+      >
+        <meshPhongMaterial color={'#FF00FF'} />
+      </CleanCylinder>
       {(() => {
         // Get geometry for each part, or use defaults for body if only fins are present
         const nose = droppedParts[0] ? getNoseConeGeometry(droppedParts[0]) : null;
