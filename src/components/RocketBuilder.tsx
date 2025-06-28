@@ -1,270 +1,150 @@
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Save } from 'lucide-react';
-import { RocketPart, RocketDesign, RocketBuilderProps } from '@/types/rocket';
+import { useState } from 'react';
 import { noseCones, finSets, engines } from '@/data/rocketParts';
-import { useRocketDesigns } from '@/hooks/useRocketDesigns';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import Auth from './Auth';
-import NoseConeSelector from './rocket-builder/NoseConeSelector';
-import BodyTubeSelector from './rocket-builder/BodyTubeSelector';
-import FinsSelector from './rocket-builder/FinsSelector';
-import EngineSelector from './rocket-builder/EngineSelector';
-import RocketPreview from './rocket-builder/RocketPreview';
-import PerformanceStats from './rocket-builder/PerformanceStats';
 
-const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: RocketBuilderProps) => {
-  const [selectedNose, setSelectedNose] = useState<RocketPart>(noseCones[0]);
-  const [selectedFins, setSelectedFins] = useState<RocketPart>(finSets[0]);
-  const [selectedEngine, setSelectedEngine] = useState<RocketPart>(engines[0]);
-  const [bodyDiameter, setBodyDiameter] = useState([24]);
-  const [bodyLength, setBodyLength] = useState([200]);
-  const [finCount, setFinCount] = useState(4); // Default to 4 fins
-  const [user, setUser] = useState<any>(null);
-  const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [showAuthDialog, setShowAuthDialog] = useState(false);
-  const [designName, setDesignName] = useState('');
-  const [designDescription, setDesignDescription] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+// Simple 2D Rocket Builder (SVG side view, click-to-select)
+const bodyOptions = [
+  { name: 'Standard Tube', diameter: 24, length: 200, mass: 50 },
+  { name: 'Wide Tube', diameter: 30, length: 200, mass: 70 },
+  { name: 'Narrow Tube', diameter: 18, length: 200, mass: 35 },
+];
 
-  const { saveDesign } = useRocketDesigns();
-  const { toast } = useToast();
+export default function RocketBuilder2D() {
+  const [selectedNose, setSelectedNose] = useState(noseCones[0]);
+  const [selectedBody, setSelectedBody] = useState(bodyOptions[0]);
+  const [selectedFins, setSelectedFins] = useState(finSets[0]);
+  const [selectedEngine, setSelectedEngine] = useState(engines[0]);
 
-  // Check auth status
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log('Current user:', user);
-      setUser(user);
-    };
-    getUser();
+  // SVG dimensions
+  const svgWidth = 200;
+  const svgHeight = 400;
+  // Rocket scaling
+  const bodyLengthPx = 200;
+  const bodyWidthPx = 24;
+  const noseHeightPx = 50;
+  const finHeightPx = 30;
+  const finWidthPx = 18;
+  const engineHeightPx = 30;
+  const engineWidthPx = 12;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state changed:', event, session?.user);
-      setUser(session?.user || null);
-      if (event === 'SIGNED_IN') {
-        setShowAuthDialog(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const bodyMass = (bodyDiameter[0] * bodyLength[0]) / 1000;
-  const totalMass = selectedNose.mass + bodyMass + selectedFins.mass + selectedEngine.mass;
-  const totalDrag = selectedNose.drag + (bodyDiameter[0] / 50) + selectedFins.drag + selectedEngine.drag;
-  const thrust = selectedEngine.thrust || 0;
-  const stability = (selectedFins.stability || 0) * (bodyLength[0] / 200);
-  const thrustToWeightRatio = thrust / (totalMass / 1000 * 9.81);
-
-  const rocketDesign: RocketDesign = {
-    nose: selectedNose,
-    body: { diameter: bodyDiameter[0], length: bodyLength[0], mass: bodyMass },
-    fins: { ...selectedFins, finCount }, // Pass finCount to fins
-    engine: selectedEngine,
-    totalMass,
-    totalDrag,
-    thrust,
-    stability
-  };
-
-  const handleBuildComplete = () => {
-    onProgressUpdate('rocketBuilt', true);
-    onRocketUpdate(rocketDesign);
-  };
-
-  const handleSaveDesign = async () => {
-    console.log('Save button clicked, user state:', user);
-    
-    if (!user) {
-      console.log('No user found, showing auth dialog');
-      setShowAuthDialog(true);
-      return;
-    }
-
-    if (!designName.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a design name.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoading(true);
-
-    const designData = {
-      name: designName.trim(),
-      description: designDescription.trim() || null,
-      nose_cone: selectedNose,
-      body_tube: { diameter: bodyDiameter[0], length: bodyLength[0], mass: bodyMass },
-      fins: selectedFins,
-      engine: selectedEngine,
-      performance_stats: {
-        totalMass,
-        totalDrag,
-        thrust,
-        stability,
-        thrustToWeightRatio
-      }
-    };
-
-    console.log('Saving design data:', designData);
-
-    try {
-      const result = await saveDesign(designData);
-      if (result) {
-        console.log('Design saved successfully');
-        setShowSaveDialog(false);
-        setDesignName('');
-        setDesignDescription('');
-        onProgressUpdate('rocketBuilt', true);
-        onRocketUpdate(rocketDesign);
-        toast({
-          title: "Success",
-          description: `Rocket design "${designData.name}" saved successfully!`,
-        });
-      }
-    } catch (error) {
-      console.error('Error saving design:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save rocket design. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Y positions
+  const bodyY = svgHeight / 2 - bodyLengthPx / 2;
+  const noseY = bodyY - noseHeightPx;
+  const engineY = bodyY + bodyLengthPx;
+  const finY = bodyY + bodyLengthPx - 5;
 
   return (
-    <div className="min-h-screen p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">Rocket Workshop</h1>
-          <Button variant="outline" onClick={() => onSectionChange('home')}>
-            Back to Mission Control
-          </Button>
-        </div>
-
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Design Panel */}
-          <div className="lg:col-span-2 space-y-6">
-            <NoseConeSelector 
-              selectedNose={selectedNose} 
-              onNoseChange={setSelectedNose} 
-            />
-            
-            <BodyTubeSelector
-              bodyDiameter={bodyDiameter}
-              bodyLength={bodyLength}
-              onDiameterChange={setBodyDiameter}
-              onLengthChange={setBodyLength}
-            />
-            
-            <FinsSelector 
-              selectedFins={selectedFins} 
-              onFinsChange={setSelectedFins} 
-              finCount={finCount}
-              onFinCountChange={setFinCount}
-            />
-            
-            <EngineSelector 
-              selectedEngine={selectedEngine} 
-              onEngineChange={setSelectedEngine} 
-            />
-          </div>
-
-          {/* Preview & Stats Panel */}
-          <div className="space-y-6">
-            <RocketPreview bodyLength={bodyLength[0]} />
-            
-            <PerformanceStats
-              totalMass={totalMass}
-              thrust={thrust}
-              stability={stability}
-              thrustToWeightRatio={thrustToWeightRatio}
-            />
-
-            {/* Actions */}
-            <div className="space-y-3">
-              <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
-                <DialogTrigger asChild>
-                  <Button className="w-full">
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Rocket Design
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Save Rocket Design</DialogTitle>
-                    <DialogDescription>
-                      Give your rocket design a name and optional description.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="name">Design Name</Label>
-                      <Input
-                        id="name"
-                        value={designName}
-                        onChange={(e) => setDesignName(e.target.value)}
-                        placeholder="Enter design name..."
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="description">Description (optional)</Label>
-                      <Input
-                        id="description"
-                        value={designDescription}
-                        onChange={(e) => setDesignDescription(e.target.value)}
-                        placeholder="Enter description..."
-                      />
-                    </div>
-                    <Button 
-                      onClick={handleSaveDesign} 
-                      disabled={!designName.trim() || isLoading}
-                      className="w-full"
-                    >
-                      {isLoading ? 'Saving...' : 'Save Design'}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-
-              <Button 
-                variant="secondary" 
-                className="w-full"
-                onClick={() => {
-                  handleBuildComplete();
-                  onSectionChange('simulate');
-                }}
+    <div className="max-w-xl mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-4">2D Rocket Builder</h1>
+      <div className="flex gap-8">
+        {/* Part selectors */}
+        <div className="space-y-4">
+          <div>
+            <div className="font-semibold mb-1">Nose Cone</div>
+            {noseCones.map((nose) => (
+              <button
+                key={nose.name}
+                className={`px-2 py-1 rounded border ${selectedNose.name === nose.name ? 'bg-blue-200' : 'bg-white'}`}
+                onClick={() => setSelectedNose(nose)}
               >
-                Build & Launch!
-              </Button>
-            </div>
+                {nose.name}
+              </button>
+            ))}
+          </div>
+          <div>
+            <div className="font-semibold mb-1">Body Tube</div>
+            {bodyOptions.map((body) => (
+              <button
+                key={body.name}
+                className={`px-2 py-1 rounded border ${selectedBody.name === body.name ? 'bg-blue-200' : 'bg-white'}`}
+                onClick={() => setSelectedBody(body)}
+              >
+                {body.name}
+              </button>
+            ))}
+          </div>
+          <div>
+            <div className="font-semibold mb-1">Fins</div>
+            {finSets.map((fin) => (
+              <button
+                key={fin.name}
+                className={`px-2 py-1 rounded border ${selectedFins.name === fin.name ? 'bg-blue-200' : 'bg-white'}`}
+                onClick={() => setSelectedFins(fin)}
+              >
+                {fin.name}
+              </button>
+            ))}
+          </div>
+          <div>
+            <div className="font-semibold mb-1">Engine</div>
+            {engines.map((engine) => (
+              <button
+                key={engine.name}
+                className={`px-2 py-1 rounded border ${selectedEngine.name === engine.name ? 'bg-blue-200' : 'bg-white'}`}
+                onClick={() => setSelectedEngine(engine)}
+              >
+                {engine.name}
+              </button>
+            ))}
           </div>
         </div>
-
-        {/* Auth Dialog */}
-        <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Sign In Required</DialogTitle>
-              <DialogDescription>
-                Sign in to save your rocket designs and access them across devices!
-              </DialogDescription>
-            </DialogHeader>
-            <Auth onSuccess={() => setShowAuthDialog(false)} />
-          </DialogContent>
-        </Dialog>
+        {/* SVG Rocket Side View */}
+        <svg width={svgWidth} height={svgHeight} className="border bg-gray-50 rounded">
+          {/* Body */}
+          <rect
+            x={svgWidth / 2 - bodyWidthPx / 2}
+            y={bodyY}
+            width={bodyWidthPx}
+            height={bodyLengthPx}
+            fill="#bbb"
+            stroke="#888"
+            strokeWidth={2}
+            rx={bodyWidthPx / 4}
+          />
+          {/* Nose Cone (triangle) */}
+          <polygon
+            points={`
+              ${svgWidth / 2 - bodyWidthPx / 2},${bodyY}
+              ${svgWidth / 2 + bodyWidthPx / 2},${bodyY}
+              ${svgWidth / 2},${noseY}
+            `}
+            fill="#6b21a8"
+            stroke="#4c1d95"
+            strokeWidth={2}
+          />
+          {/* Engine (rectangle) */}
+          <rect
+            x={svgWidth / 2 - engineWidthPx / 2}
+            y={engineY}
+            width={engineWidthPx}
+            height={engineHeightPx}
+            fill="#f97316"
+            stroke="#ea580c"
+            strokeWidth={2}
+            rx={engineWidthPx / 4}
+          />
+          {/* Fins (trapezoids) */}
+          <polygon
+            points={`
+              ${svgWidth / 2 - bodyWidthPx / 2},${finY}
+              ${svgWidth / 2 - bodyWidthPx / 2 - finWidthPx},${finY + finHeightPx}
+              ${svgWidth / 2 - bodyWidthPx / 2},${finY + finHeightPx}
+            `}
+            fill="#10b981"
+            stroke="#047857"
+            strokeWidth={2}
+          />
+          <polygon
+            points={`
+              ${svgWidth / 2 + bodyWidthPx / 2},${finY}
+              ${svgWidth / 2 + bodyWidthPx / 2 + finWidthPx},${finY + finHeightPx}
+              ${svgWidth / 2 + bodyWidthPx / 2},${finY + finHeightPx}
+            `}
+            fill="#10b981"
+            stroke="#047857"
+            strokeWidth={2}
+          />
+        </svg>
       </div>
     </div>
   );
-};
-
-export default RocketBuilder;
+}
