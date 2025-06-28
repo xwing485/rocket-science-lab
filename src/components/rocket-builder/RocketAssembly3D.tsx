@@ -184,12 +184,11 @@ const Rocket3DAssembly = ({ droppedParts, onRemovePart }: { droppedParts: Droppe
   };
 
   // Helper function to render fins based on type
-  const renderFins = (finPart: RocketPart, yPos: number) => {
+  const renderFins = (finPart: RocketPart, yPos: number, bodyRadius: number = 0.012) => {
     const config = getFinGeometry(finPart);
     const count = finPart.finCount || config.finCount || 4;
     const fins = [];
     const angleStep = (2 * Math.PI) / count;
-    const bodyRadius = 12 * 0.001;
     const finOffset = bodyRadius + 0.001;
     for (let i = 0; i < count; i++) {
       const angle = i * angleStep;
@@ -215,13 +214,7 @@ const Rocket3DAssembly = ({ droppedParts, onRemovePart }: { droppedParts: Droppe
 
   return (
     <group ref={rocketRef} scale={[5, 5, 5]}>
-      {/* DEBUG: Always render a large magenta body tube at the origin */}
-      <CleanCylinder
-        args={[0.2, 0.2, 1.5, 16]}
-        position={[0, 0, 0]}
-      >
-        <meshPhongMaterial color={'#FF00FF'} />
-      </CleanCylinder>
+      {/* Only render actual rocket parts below */}
       {(() => {
         // Get geometry for each part, or use defaults for body if only fins are present
         const nose = droppedParts[0] ? getNoseConeGeometry(droppedParts[0]) : null;
@@ -255,11 +248,11 @@ const Rocket3DAssembly = ({ droppedParts, onRemovePart }: { droppedParts: Droppe
           {/* Body Tube - Position 1 (or default if only fins) */}
           {body && (
             <CleanCylinder
-              args={[0.2, 0.2, 1.5, 16]} // DEBUG: exaggerated size
+              args={body.args}
               position={[0, bodyY, 0]}
               onClick={() => handlePartClick(1)}
             >
-              <meshPhongMaterial color={'#FF00FF'} />
+              <meshPhongMaterial color={body.color} />
             </CleanCylinder>
           )}
           {/* Nose Cone - Position 0 */}
@@ -273,7 +266,7 @@ const Rocket3DAssembly = ({ droppedParts, onRemovePart }: { droppedParts: Droppe
             </CleanCone>
           )}
           {/* Fins - Position 2 (attach to bottom of body) */}
-          {droppedParts[2] && body && renderFins(droppedParts[2], bodyY - bodyHeight / 2)}
+          {droppedParts[2] && body && renderFins(droppedParts[2], bodyY - bodyHeight / 2, body.args[0])}
         </>;
       })()}
     </group>
