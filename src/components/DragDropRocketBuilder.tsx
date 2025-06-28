@@ -1,12 +1,9 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Rocket, Save, Play, Eye, EyeOff } from 'lucide-react';
+import { Save, Play } from 'lucide-react';
 import { useRocketDesigns } from '@/hooks/useRocketDesigns';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
 interface RocketPart {
   id: string;
@@ -29,7 +26,8 @@ interface DragDropRocketBuilderProps {
 
 const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: DragDropRocketBuilderProps) => {
   const [activeTab, setActiveTab] = useState<'nose' | 'body' | 'fins' | 'engine'>('nose');
-  const [selectedParts, setSelectedParts] = useState({ nose: null, body: null, fins: null, engine: null });
+  const [draggedPart, setDraggedPart] = useState<RocketPart | null>(null);
+  const [droppedParts, setDroppedParts] = useState<{ [key: number]: RocketPart }>({});
   const { saveDesign } = useRocketDesigns();
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [designName, setDesignName] = useState('');
@@ -58,56 +56,74 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
     ]
   };
 
-  const handleSelectPart = (type, part) => {
-    setSelectedParts(prev => ({ ...prev, [type]: part }));
+  const handleDragStart = (e: React.DragEvent, part: RocketPart) => {
+    setDraggedPart(part);
+    e.dataTransfer.effectAllowed = 'copy';
   };
 
-  const handleRemovePart = (type) => {
-    setSelectedParts(prev => ({ ...prev, [type]: null }));
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
   };
 
-  const totalMass = Object.values(selectedParts).reduce((sum, part) => sum + part.mass, 0);
-  const totalDrag = Object.values(selectedParts).reduce((sum, part) => sum + part.drag, 0);
-  const thrust = selectedParts.engine?.thrust || 0;
-  const stability = selectedParts.fins?.stability || 0;
+  const handleDrop = (e: React.DragEvent, position: number) => {
+    e.preventDefault();
+    if (draggedPart) {
+      setDroppedParts(prev => ({
+        ...prev,
+        [position]: { ...draggedPart, position }
+      }));
+      setDraggedPart(null);
+    }
+  };
+
+  const removePart = (position: number) => {
+    setDroppedParts(prev => {
+      const newParts = { ...prev };
+      delete newParts[position];
+      return newParts;
+    });
+  };
+
+  const totalMass = Object.values(droppedParts).reduce((sum, part) => sum + part.mass, 0);
+  const totalDrag = Object.values(droppedParts).reduce((sum, part) => sum + part.drag, 0);
+  const thrust = droppedParts[3]?.thrust || 0;
+  const stability = droppedParts[2]?.stability || 0;
   const thrustToWeight = totalMass > 0 ? thrust / (totalMass / 1000 * 9.81) : 0;
 
-  const isComplete = Object.keys(selectedParts).length === 4;
+  const isComplete = Object.keys(droppedParts).length === 4;
 
   const handleSaveDesign = async () => {
-    const bodyPart = selectedParts.body || { mass: 0, diameter: 24, length: 200 };
+    const bodyPart = droppedParts[1] || { mass: 0, diameter: 24, length: 200 };
     const diameter = bodyPart.diameter || 24;
     const length = bodyPart.length || 200;
     const mass = bodyPart.mass || 0;
     const rocketDesign = {
-      nose: selectedParts.nose || null,
+      nose: droppedParts[0] || null,
       body: { diameter, length, mass },
-      fins: selectedParts.fins || null,
-      engine: selectedParts.engine || null,
+      fins: droppedParts[2] || null,
+      engine: droppedParts[3] || null,
       totalMass,
       totalDrag,
       thrust,
       stability
     };
-
     setShowSaveDialog(true);
   };
 
   const handleSaveConfirm = async () => {
     if (!designName.trim()) return;
-
-    const bodyPart = selectedParts.body || { mass: 0, diameter: 24, length: 200 };
+    const bodyPart = droppedParts[1] || { mass: 0, diameter: 24, length: 200 };
     const diameter = bodyPart.diameter || 24;
     const length = bodyPart.length || 200;
     const mass = bodyPart.mass || 0;
-
     const designData = {
       name: designName,
       description: designDescription,
-      nose_cone: selectedParts.nose || null,
+      nose_cone: droppedParts[0] || null,
       body_tube: { diameter, length, mass },
-      fins: selectedParts.fins || null,
-      engine: selectedParts.engine || null,
+      fins: droppedParts[2] || null,
+      engine: droppedParts[3] || null,
       performance_stats: {
         totalMass,
         totalDrag,
@@ -115,17 +131,16 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
         stability
       }
     };
-
     const result = await saveDesign(designData);
     if (result) {
       setShowSaveDialog(false);
       setDesignName('');
       setDesignDescription('');
       onRocketUpdate({
-        nose: selectedParts.nose || null,
+        nose: droppedParts[0] || null,
         body: { diameter, length, mass },
-        fins: selectedParts.fins || null,
-        engine: selectedParts.engine || null,
+        fins: droppedParts[2] || null,
+        engine: droppedParts[3] || null,
         totalMass,
         totalDrag,
         thrust,
@@ -168,10 +183,10 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
 
   // Live SVG preview of the current rocket
   const renderRocketPreview = () => {
-    const nose = selectedParts.nose;
-    const body = selectedParts.body;
-    const fins = selectedParts.fins;
-    const engine = selectedParts.engine;
+    const nose = droppedParts[0];
+    const body = droppedParts[1];
+    const fins = droppedParts[2];
+    const engine = droppedParts[3];
     const noseStyle = getPartStyles(nose, 'nose');
     const bodyStyle = getPartStyles(body, 'body');
     const finsStyle = getPartStyles(fins, 'fins');
@@ -231,19 +246,19 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold mb-2">Rocket Builder</h1>
-            <p className="text-muted-foreground">Design your own rocket by clicking parts in the palette below.</p>
+            <p className="text-muted-foreground">Design your own rocket by dragging and dropping components.</p>
           </div>
           <Button variant="outline" onClick={() => onSectionChange('home')}>
             Back to Mission Control
           </Button>
         </div>
-
         <div className="grid lg:grid-cols-3 gap-6">
+          {/* Parts Palette */}
           <div className="lg:col-span-1">
             <Card>
               <CardHeader>
                 <CardTitle>Parts Palette</CardTitle>
-                <CardDescription>Click a part to add it to your rocket</CardDescription>
+                <CardDescription>Drag parts to the assembly area</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex border-b mb-4">
@@ -261,41 +276,49 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
                     </button>
                   ))}
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {parts[activeTab].map((part) => (
                     <div
                       key={part.id}
-                      className={`flex items-center justify-between p-2 rounded cursor-pointer border ${selectedParts[activeTab]?.id === part.id ? 'border-primary bg-primary/10' : 'border-transparent hover:bg-accent/20'}`}
-                      onClick={() => handleSelectPart(activeTab, part)}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, part)}
+                      className="p-3 border rounded-lg cursor-grab hover:bg-accent/50 transition-colors"
                     >
-                      <div>
-                        <div className="font-semibold text-sm">{part.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          Drag: {part.drag} | {part.thrust ? `Thrust: ${part.thrust}N | ` : ''}{part.mass}g
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium">{part.name}</h4>
+                          <div className="text-sm text-muted-foreground">
+                            Drag: {part.drag} | {part.thrust && ` Thrust: ${part.thrust}N |`} {part.mass}g
+                          </div>
                         </div>
+                        <Badge variant="secondary">{part.mass}g</Badge>
                       </div>
-                      {selectedParts[activeTab]?.id === part.id && <span className="text-primary font-bold">✓</span>}
                     </div>
                   ))}
                 </div>
               </CardContent>
             </Card>
           </div>
-
+          {/* Assembly Area */}
           <div className="lg:col-span-1 flex flex-col items-center">
             <div className="w-full max-w-xs mx-auto flex flex-col items-center">
               <div className="py-4">{renderRocketPreview()}</div>
               <div className="w-full flex flex-col gap-3">
-                {['nose', 'body', 'fins', 'engine'].map((type) => (
-                  <div key={type} className="flex items-center justify-between bg-blue-800 bg-opacity-60 rounded-lg border-2 border-dashed border-blue-300 px-4 py-2 min-h-[40px]">
+                {['nose', 'body', 'fins', 'engine'].map((type, idx) => (
+                  <div
+                    key={type}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, idx)}
+                    className="flex items-center justify-between bg-blue-800 bg-opacity-60 rounded-lg border-2 border-dashed border-blue-300 px-4 py-2 min-h-[40px]"
+                  >
                     <span className="text-white font-medium">
-                      {selectedParts[type] ? selectedParts[type].name : <span className="opacity-40">Select {type}</span>}
+                      {droppedParts[idx] ? droppedParts[idx].name : <span className="opacity-40">Drop {type} here</span>}
                     </span>
-                    {selectedParts[type] && (
+                    {droppedParts[idx] && (
                       <button
                         className="ml-2 text-red-400 hover:text-red-600 text-lg font-bold"
-                        onClick={() => handleRemovePart(type)}
-                        aria-label={`Remove ${selectedParts[type].name}`}
+                        onClick={() => removePart(idx)}
+                        aria-label={`Remove ${droppedParts[idx].name}`}
                       >
                         ×
                       </button>
@@ -305,99 +328,56 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
               </div>
             </div>
           </div>
-
+          {/* Rocket Statistics and Actions (unchanged) */}
           <div className="lg:col-span-1">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Rocket className="h-5 w-5 mr-2" />
-                  Rocket Statistics
-                </CardTitle>
+                <CardTitle>Rocket Statistics</CardTitle>
                 <CardDescription>Performance metrics for your rocket design</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-sm text-muted-foreground">Total Weight</div>
-                      <div className="text-lg font-semibold">{totalMass} units</div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-muted-foreground">Thrust</div>
-                      <div className="text-lg font-semibold">{thrust} units</div>
-                    </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span>Total Weight</span>
+                    <span>{totalMass} g</span>
                   </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-sm text-muted-foreground">Thrust-to-Weight</div>
-                      <div className="text-lg font-semibold">{thrustToWeight.toFixed(1)}</div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-muted-foreground">Drag Coefficient</div>
-                      <div className="text-lg font-semibold">{totalDrag.toFixed(2)}</div>
-                    </div>
+                  <div className="flex justify-between items-center">
+                    <span>Thrust</span>
+                    <span>{thrust} N</span>
                   </div>
-
-                  <div className="pt-4 border-t space-y-3">
-                    <Button 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={handleSaveDesign}
-                      disabled={!isComplete}
-                    >
-                      <Save className="h-4 w-4 mr-2" />
-                      Save Design
-                    </Button>
-                    <Button 
-                      className="w-full"
-                      onClick={handleSimulate}
-                      disabled={!isComplete}
-                    >
-                      <Play className="h-4 w-4 mr-2" />
-                      Simulate
-                    </Button>
+                  <div className="flex justify-between items-center">
+                    <span>Thrust-to-Weight</span>
+                    <span>{thrustToWeight.toFixed(1)}</span>
                   </div>
+                  <div className="flex justify-between items-center">
+                    <span>Drag Coefficient</span>
+                    <span>{totalDrag.toFixed(2)}</span>
+                  </div>
+                </div>
+                <div className="pt-4 border-t space-y-3">
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleSaveDesign}
+                    disabled={!isComplete}
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Design
+                  </Button>
+                  <Button
+                    className="w-full"
+                    onClick={handleSimulate}
+                    disabled={!isComplete}
+                  >
+                    <Play className="h-4 w-4 mr-2" />
+                    Simulate
+                  </Button>
                 </div>
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
-
-      <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Save Rocket Design</DialogTitle>
-            <DialogDescription>
-              Give your rocket design a name and optional description.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="name">Design Name</Label>
-              <Input
-                id="name"
-                value={designName}
-                onChange={(e) => setDesignName(e.target.value)}
-                placeholder="Enter design name..."
-              />
-            </div>
-            <div>
-              <Label htmlFor="description">Description (optional)</Label>
-              <Input
-                id="description"
-                value={designDescription}
-                onChange={(e) => setDesignDescription(e.target.value)}
-                placeholder="Enter description..."
-              />
-            </div>
-            <Button onClick={handleSaveConfirm} disabled={!designName.trim()}>
-              Save Design
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
