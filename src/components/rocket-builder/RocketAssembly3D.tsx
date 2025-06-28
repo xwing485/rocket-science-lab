@@ -89,33 +89,30 @@ const Rocket3DAssembly = ({ droppedParts, onRemovePart }: { droppedParts: Droppe
     
     switch (finPart.name) {
       case 'Standard Fins':
-        // Standard rectangular fins - 4 fins, medium size
-        // Width: 2mm, height: 30mm, depth: 15mm
+        // Flat, wide fins: thickness 0.5mm, height 20mm, span 15mm
         return {
           finCount: 4,
-          finSize: { width: 2 * scale, height: 30 * scale, depth: 15 * scale },
+          finSize: { width: 0.5 * scale, height: 20 * scale, depth: 15 * scale },
           color: "#10B981"
         };
       case 'Large Fins':
-        // Large fins - 4 fins, bigger for more stability
-        // Width: 3mm, height: 40mm, depth: 20mm
+        // Larger flat fins: thickness 0.5mm, height 25mm, span 20mm
         return {
           finCount: 4,
-          finSize: { width: 3 * scale, height: 40 * scale, depth: 20 * scale },
+          finSize: { width: 0.5 * scale, height: 25 * scale, depth: 20 * scale },
           color: "#F59E0B"
         };
       case 'Swept Fins':
-        // Swept fins - 3 fins, swept back design
-        // Width: 2mm, height: 35mm, depth: 18mm
+        // Swept fins: thickness 0.5mm, height 22mm, span 18mm
         return {
           finCount: 3,
-          finSize: { width: 2 * scale, height: 35 * scale, depth: 18 * scale },
+          finSize: { width: 0.5 * scale, height: 22 * scale, depth: 18 * scale },
           color: "#EF4444"
         };
       default:
         return {
           finCount: 4,
-          finSize: { width: 2 * scale, height: 30 * scale, depth: 15 * scale },
+          finSize: { width: 0.5 * scale, height: 20 * scale, depth: 15 * scale },
           color: "#10B981"
         };
     }
@@ -169,16 +166,19 @@ const Rocket3DAssembly = ({ droppedParts, onRemovePart }: { droppedParts: Droppe
     const config = getFinGeometry(finPart);
     const fins = [];
     const angleStep = (2 * Math.PI) / config.finCount;
+    // Attach to the outside of the body tube
     const bodyRadius = 12 * 0.001; // 12mm radius in meters
+    const finOffset = bodyRadius + config.finSize.width / 2; // Place outside the body
     for (let i = 0; i < config.finCount; i++) {
       const angle = i * angleStep;
-      const x = Math.cos(angle) * bodyRadius;
-      const z = Math.sin(angle) * bodyRadius;
+      const x = Math.cos(angle) * finOffset;
+      const z = Math.sin(angle) * finOffset;
       fins.push(
         <CleanBox
           key={i}
           args={[config.finSize.width, config.finSize.height, config.finSize.depth]}
-          position={[x, yPos, z]}
+          position={[x, yPos - config.finSize.height / 2, z]}
+          rotation={[0, angle, 0]}
           onClick={() => handlePartClick(2)}
         >
           <meshPhongMaterial color={config.color} />
