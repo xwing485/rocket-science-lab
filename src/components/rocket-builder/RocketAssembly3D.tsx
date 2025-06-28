@@ -223,11 +223,11 @@ const Rocket3DAssembly = ({ droppedParts, onRemovePart }: { droppedParts: Droppe
           {/* Body Tube - Position 1 (or default if only fins) */}
           {body && (
             <CleanCylinder
-              args={body.args}
+              args={[0.2, 0.2, 1.5, 16]} // DEBUG: exaggerated size
               position={[0, bodyY, 0]}
               onClick={() => handlePartClick(1)}
             >
-              <meshPhongMaterial color={body.color} />
+              <meshPhongMaterial color={'#FF00FF'} />
             </CleanCylinder>
           )}
           {/* Nose Cone - Position 0 */}
