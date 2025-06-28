@@ -1,119 +1,70 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Play, RotateCcw, TrendingUp, Clock } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-interface RocketDesign {
-  nose: { name: string; mass: number; drag: number };
-  body: { diameter: number; length: number; mass: number };
-  fins: { name: string; mass: number; drag: number; stability?: number };
-  engine: { name: string; mass: number; drag: number; thrust?: number };
-  totalMass: number;
-  totalDrag: number;
-  thrust: number;
-  stability: number;
-}
-
-interface SimulationData {
-  time: number;
-  altitude: number;
-  velocity: number;
-  acceleration: number;
-  horizontalPosition: number;
-  horizontalVelocity: number;
-}
-
-interface SimulationResults {
-  maxAltitude: number;
-  maxVelocity: number;
-  flightTime: number;
-  performanceRating: string;
-}
-
-interface RocketSimulationProps {
-  onSectionChange: (section: string) => void;
-  onProgressUpdate: (key: string, value: boolean) => void;
-  rocketDesign: RocketDesign | null;
-  onSimulationUpdate: (results: SimulationResults) => void;
-}
-
-// Realistic 2D Rocket Simulation (SVG side view, flight path, graphs)
+// Realistic 2D Rocket Simulation (Styled like screenshot, improved physics)
 export default function RocketSimulation2D() {
   const [isLaunching, setIsLaunching] = useState(false);
   const [flightTime, setFlightTime] = useState(0);
-  const [rocketPosition, setRocketPosition] = useState({ x: 100, y: 350 });
+  const [rocketPosition, setRocketPosition] = useState({ x: 150, y: 260 });
   const [flightData, setFlightData] = useState<Array<{time: number, altitude: number, velocity: number}>>([]);
 
-  // Realistic simulation parameters
-  const thrust = 100; // N (engine thrust)
-  const mass = 0.5; // kg (total rocket mass)
+  // Physics
+  const thrust = 100; // N
+  const mass = 0.5; // kg
   const gravity = 9.81; // m/s²
-  const dragCoeff = 0.3; // drag coefficient
-  const crossSectionalArea = 0.01; // m² (π * radius²)
-  const airDensity = 1.225; // kg/m³ (at sea level)
-  const timeStep = 0.05; // seconds (smaller for more accuracy)
-  const burnTime = 2.0; // seconds (engine burn duration)
+  const dragCoeff = 0.5; // more realistic drag
+  const crossSectionalArea = 0.01; // m²
+  const airDensity = 1.225; // kg/m³
+  const timeStep = 0.01; // seconds
+  const burnTime = 2.0; // seconds
 
   // SVG dimensions
-  const svgWidth = 400;
+  const svgWidth = 300;
   const svgHeight = 300;
-  const launchPadY = svgHeight - 20;
+  const groundY = svgHeight - 30;
+  const padY = groundY - 20;
 
   // Rocket dimensions
-  const rocketWidth = 8;
-  const rocketHeight = 40;
+  const rocketWidth = 24;
+  const rocketHeight = 80;
+  const noseHeight = 20;
+  const engineHeight = 16;
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    
     if (isLaunching) {
+      let velocity = 0;
+      let altitude = 0;
+      let time = 0;
+      let powered = true;
+      let running = true;
+      let data: Array<{time: number, altitude: number, velocity: number}> = [];
       interval = setInterval(() => {
-        setFlightTime(prev => {
-          const newTime = prev + timeStep;
-          
-          // Realistic physics simulation
-          let acceleration = 0;
-          let velocity = 0;
-          let altitude = 0;
-          
-          if (newTime <= burnTime) {
-            // Powered ascent phase
-            const dragForce = 0.5 * dragCoeff * airDensity * crossSectionalArea * Math.pow(velocity, 2);
-            acceleration = (thrust - mass * gravity - dragForce) / mass;
-            velocity = Math.max(0, acceleration * newTime);
-            altitude = 0.5 * acceleration * newTime * newTime;
-          } else {
-            // Ballistic descent phase (no thrust)
-            const timeSinceBurnout = newTime - burnTime;
-            const burnoutVelocity = (thrust - mass * gravity) / mass * burnTime;
-            const burnoutAltitude = 0.5 * ((thrust - mass * gravity) / mass) * burnTime * burnTime;
-            
-            // Parabolic trajectory: h = h0 + v0*t - 0.5*g*t²
-            altitude = burnoutAltitude + burnoutVelocity * timeSinceBurnout - 0.5 * gravity * timeSinceBurnout * timeSinceBurnout;
-            velocity = burnoutVelocity - gravity * timeSinceBurnout;
-          }
-          
-          // Update rocket position (scaled for SVG)
-          const rocketX = 100; // Center horizontally
-          const rocketY = Math.max(launchPadY - rocketHeight, launchPadY - (altitude * 1.5)); // Scale altitude for visibility
-          
-          setRocketPosition({ x: rocketX, y: rocketY });
-          
-          // Store flight data
-          setFlightData(prev => [...prev, { time: newTime, altitude: Math.max(0, altitude), velocity: Math.max(0, velocity) }]);
-          
-          // Stop simulation when rocket hits ground or after 15 seconds
-          if (newTime > 15 || altitude <= 0) {
-            setIsLaunching(false);
-            return 0;
-          }
-          
-          return newTime;
-        });
-      }, 50); // Update every 50ms for smoother animation
+        if (!running) return;
+        let currentThrust = (time < burnTime) ? thrust : 0;
+        let drag = 0.5 * dragCoeff * airDensity * crossSectionalArea * velocity * velocity * (velocity > 0 ? 1 : -1);
+        let netForce = currentThrust - (mass * gravity) - drag;
+        let acceleration = netForce / mass;
+        velocity += acceleration * timeStep;
+        altitude += velocity * timeStep;
+        time += timeStep;
+        if (altitude < 0) {
+          altitude = 0;
+          velocity = 0;
+          running = false;
+          setIsLaunching(false);
+        }
+        if (velocity <= 0 && time > burnTime) {
+          running = false;
+          setIsLaunching(false);
+        }
+        setRocketPosition({ x: svgWidth / 2, y: Math.max(padY - rocketHeight, padY - (altitude * 2)) });
+        data.push({ time, altitude, velocity });
+        setFlightTime(time);
+        setFlightData([...data]);
+      }, 10);
     }
-
     return () => clearInterval(interval);
   }, [isLaunching]);
 
@@ -121,101 +72,56 @@ export default function RocketSimulation2D() {
     setIsLaunching(true);
     setFlightTime(0);
     setFlightData([]);
-    setRocketPosition({ x: 100, y: launchPadY - rocketHeight });
+    setRocketPosition({ x: svgWidth / 2, y: padY - rocketHeight });
   };
 
   const handleReset = () => {
     setIsLaunching(false);
     setFlightTime(0);
     setFlightData([]);
-    setRocketPosition({ x: 100, y: 350 });
+    setRocketPosition({ x: svgWidth / 2, y: 260 });
   };
 
-  // Generate flight path points
-  const flightPathPoints = flightData
-    .map((point, index) => {
-      const x = 100 + index * 1.5; // Spread horizontally
-      const y = launchPadY - (point.altitude * 1.5);
-      return `${x},${y}`;
-    })
-    .join(' ');
-
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-3xl mx-auto p-6">
       <h1 className="text-2xl font-bold mb-4">2D Rocket Simulation</h1>
-      
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Flight Visualization */}
+        {/* Launch Visualization */}
         <Card>
           <CardHeader>
-            <CardTitle>Flight Path</CardTitle>
+            <CardTitle>Launch</CardTitle>
           </CardHeader>
           <CardContent>
-            <svg width={svgWidth} height={svgHeight} className="border bg-gray-50 rounded">
+            <svg width={svgWidth} height={svgHeight} style={{ background: '#b6d0e2', borderRadius: 12 }}>
+              {/* Ground */}
+              <rect x={0} y={groundY} width={svgWidth} height={svgHeight - groundY} fill="#3b3b3b" />
               {/* Launch Pad */}
-              <rect x={80} y={launchPadY} width={40} height={10} fill="#8b5a2b" />
-              <rect x={85} y={launchPadY - 5} width={30} height={5} fill="#654321" />
-              
-              {/* Flight Path */}
-              {flightData.length > 1 && (
-                <polyline
-                  points={flightPathPoints}
-                  fill="none"
-                  stroke="#3b82f6"
-                  strokeWidth={2}
-                  strokeDasharray="5,5"
-                />
-              )}
-              
+              <rect x={svgWidth/2 - 40} y={padY} width={80} height={20} fill="#232323" stroke="#111" strokeWidth={2} rx={4} />
               {/* Rocket */}
               <g transform={`translate(${rocketPosition.x - rocketWidth/2}, ${rocketPosition.y})`}>
-                {/* Body */}
-                <rect width={rocketWidth} height={rocketHeight} fill="#6b7280" stroke="#374151" strokeWidth={1} />
-                {/* Nose */}
-                <polygon
-                  points={`${rocketWidth/2},0 ${0},${rocketHeight} ${rocketWidth},${rocketHeight}`}
-                  fill="#8b5cf6"
-                  stroke="#7c3aed"
-                  strokeWidth={1}
-                />
-                {/* Fins */}
-                <polygon
-                  points={`0,${rocketHeight-10} -8,${rocketHeight} 0,${rocketHeight}`}
-                  fill="#10b981"
-                  stroke="#047857"
-                  strokeWidth={1}
-                />
-                <polygon
-                  points={`${rocketWidth},${rocketHeight-10} ${rocketWidth+8},${rocketHeight} ${rocketWidth},${rocketHeight}`}
-                  fill="#10b981"
-                  stroke="#047857"
-                  strokeWidth={1}
-                />
+                {/* Engine flame (only during powered ascent) */}
+                {isLaunching && flightTime <= burnTime && (
+                  <ellipse cx={rocketWidth/2} cy={rocketHeight + engineHeight/2} rx={10} ry={8} fill="#fff7ae" opacity="0.7" />
+                )}
                 {/* Engine */}
-                <rect x={rocketWidth/2-2} y={rocketHeight} width={4} height={8} fill="#f97316" stroke="#ea580c" strokeWidth={1} />
+                <rect x={rocketWidth/2 - 6} y={rocketHeight - engineHeight} width={12} height={engineHeight} fill="#888" stroke="#444" strokeWidth={2} rx={2} />
+                {/* Body */}
+                <rect x={rocketWidth/2 - 8} y={noseHeight} width={16} height={rocketHeight - noseHeight - engineHeight} fill="#e5e7eb" stroke="#888" strokeWidth={2} />
+                {/* Body outline */}
+                <rect x={rocketWidth/2 - 8} y={noseHeight} width={16} height={rocketHeight - noseHeight - engineHeight} fill="none" stroke="#222" strokeWidth={1.5} />
+                {/* Nose cone */}
+                <polygon points={`${rocketWidth/2},0 0,${noseHeight} ${rocketWidth},${noseHeight}`} fill="#222" stroke="#111" strokeWidth={2} />
+                {/* Fins */}
+                <polygon points={`0,${rocketHeight-engineHeight-8} -12,${rocketHeight-engineHeight+16} 0,${rocketHeight-engineHeight+8}`} fill="#888" stroke="#444" strokeWidth={2} />
+                <polygon points={`${rocketWidth},${rocketHeight-engineHeight-8} ${rocketWidth+12},${rocketHeight-engineHeight+16} ${rocketWidth},${rocketHeight-engineHeight+8}`} fill="#888" stroke="#444" strokeWidth={2} />
               </g>
-              
-              {/* Grid lines */}
-              {Array.from({ length: 6 }, (_, i) => (
-                <line
-                  key={i}
-                  x1={0}
-                  y1={launchPadY - (i * 50)}
-                  x2={svgWidth}
-                  y2={launchPadY - (i * 50)}
-                  stroke="#e5e7eb"
-                  strokeWidth={1}
-                />
-              ))}
             </svg>
-            
             <div className="mt-4 space-y-2">
               <div className="flex justify-between">
                 <span>Time: {flightTime.toFixed(1)}s</span>
                 <span>Altitude: {flightData[flightData.length - 1]?.altitude.toFixed(1) || 0}m</span>
                 <span>Velocity: {flightData[flightData.length - 1]?.velocity.toFixed(1) || 0}m/s</span>
               </div>
-              
               <div className="flex gap-2">
                 <Button onClick={handleLaunch} disabled={isLaunching}>
                   Launch Rocket
@@ -227,7 +133,6 @@ export default function RocketSimulation2D() {
             </div>
           </CardContent>
         </Card>
-
         {/* Performance Graphs */}
         <Card>
           <CardHeader>
@@ -238,34 +143,33 @@ export default function RocketSimulation2D() {
               {/* Altitude Graph */}
               <div>
                 <h3 className="font-semibold mb-2">Altitude vs Time</h3>
-                <svg width={350} height={150} className="border bg-white rounded">
+                <svg width={250} height={100} className="border bg-white rounded">
                   {flightData.length > 1 && (
                     <polyline
-                      points={flightData.map((point, i) => `${i * 2},${150 - point.altitude * 1.5}`).join(' ')}
+                      points={flightData.map((point, i) => `${i * 2},${100 - point.altitude * 1.2}`).join(' ')}
                       fill="none"
                       stroke="#10b981"
                       strokeWidth={2}
                     />
                   )}
-                  <line x1={0} y1={150} x2={350} y2={150} stroke="#000" strokeWidth={1} />
-                  <line x1={0} y1={0} x2={0} y2={150} stroke="#000" strokeWidth={1} />
+                  <line x1={0} y1={100} x2={250} y2={100} stroke="#000" strokeWidth={1} />
+                  <line x1={0} y1={0} x2={0} y2={100} stroke="#000" strokeWidth={1} />
                 </svg>
               </div>
-              
               {/* Velocity Graph */}
               <div>
                 <h3 className="font-semibold mb-2">Velocity vs Time</h3>
-                <svg width={350} height={150} className="border bg-white rounded">
+                <svg width={250} height={100} className="border bg-white rounded">
                   {flightData.length > 1 && (
                     <polyline
-                      points={flightData.map((point, i) => `${i * 2},${150 - point.velocity * 2}`).join(' ')}
+                      points={flightData.map((point, i) => `${i * 2},${100 - point.velocity * 1.5}`).join(' ')}
                       fill="none"
                       stroke="#f59e0b"
                       strokeWidth={2}
                     />
                   )}
-                  <line x1={0} y1={150} x2={350} y2={150} stroke="#000" strokeWidth={1} />
-                  <line x1={0} y1={0} x2={0} y2={150} stroke="#000" strokeWidth={1} />
+                  <line x1={0} y1={100} x2={250} y2={100} stroke="#000" strokeWidth={1} />
+                  <line x1={0} y1={0} x2={0} y2={100} stroke="#000" strokeWidth={1} />
                 </svg>
               </div>
             </div>

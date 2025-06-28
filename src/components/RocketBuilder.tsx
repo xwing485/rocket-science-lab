@@ -1,149 +1,143 @@
 import { useState } from 'react';
-import { noseCones, finSets, engines } from '@/data/rocketParts';
 
-// Simple 2D Rocket Builder (SVG side view, click-to-select)
-const bodyOptions = [
-  { name: 'Standard Tube', diameter: 24, length: 200, mass: 50 },
-  { name: 'Wide Tube', diameter: 30, length: 200, mass: 70 },
-  { name: 'Narrow Tube', diameter: 18, length: 200, mass: 35 },
+const partTypes = [
+  {
+    type: 'nose',
+    name: 'Nose Cone',
+    svg: (
+      <svg width="40" height="40" viewBox="0 0 40 40">
+        <polygon points="20,4 36,36 4,36" fill="#6b21a8" stroke="#4c1d95" strokeWidth="2" />
+      </svg>
+    ),
+  },
+  {
+    type: 'body',
+    name: 'Body Tube',
+    svg: (
+      <svg width="40" height="40" viewBox="0 0 40 40">
+        <rect x="12" y="4" width="16" height="32" fill="#bbb" stroke="#888" strokeWidth="2" rx="6" />
+      </svg>
+    ),
+  },
+  {
+    type: 'fins',
+    name: 'Fins',
+    svg: (
+      <svg width="40" height="40" viewBox="0 0 40 40">
+        <polygon points="12,36 4,36 12,28" fill="#10b981" stroke="#047857" strokeWidth="2" />
+        <polygon points="28,36 36,36 28,28" fill="#10b981" stroke="#047857" strokeWidth="2" />
+      </svg>
+    ),
+  },
+  {
+    type: 'engine',
+    name: 'Engine',
+    svg: (
+      <svg width="40" height="40" viewBox="0 0 40 40">
+        <rect x="16" y="4" width="8" height="24" fill="#f97316" stroke="#ea580c" strokeWidth="2" rx="3" />
+        <polygon points="12,28 28,28 20,36" fill="#ea580c" stroke="#f97316" strokeWidth="2" />
+      </svg>
+    ),
+  },
 ];
 
-export default function RocketBuilder2D() {
-  const [selectedNose, setSelectedNose] = useState(noseCones[0]);
-  const [selectedBody, setSelectedBody] = useState(bodyOptions[0]);
-  const [selectedFins, setSelectedFins] = useState(finSets[0]);
-  const [selectedEngine, setSelectedEngine] = useState(engines[0]);
+const partOrder = ['nose', 'body', 'fins', 'engine'];
 
-  // SVG dimensions
-  const svgWidth = 200;
-  const svgHeight = 400;
-  // Rocket scaling
-  const bodyLengthPx = 200;
-  const bodyWidthPx = 24;
-  const noseHeightPx = 50;
-  const finHeightPx = 30;
-  const finWidthPx = 18;
-  const engineHeightPx = 30;
-  const engineWidthPx = 12;
+export default function RocketBuilder() {
+  const [rocketParts, setRocketParts] = useState([]); // e.g. [{type: 'nose'}, ...]
+  const [draggedPart, setDraggedPart] = useState(null);
 
-  // Y positions
-  const bodyY = svgHeight / 2 - bodyLengthPx / 2;
-  const noseY = bodyY - noseHeightPx;
-  const engineY = bodyY + bodyLengthPx;
-  const finY = bodyY + bodyLengthPx - 5;
+  // Drag handlers
+  const handleDragStart = (type) => setDraggedPart(type);
+  const handleDragEnd = () => setDraggedPart(null);
+
+  const handleDrop = () => {
+    if (!draggedPart) return;
+    // Only allow one of each part type, and in correct order
+    const currentTypes = rocketParts.map((p) => p.type);
+    const nextIndex = rocketParts.length;
+    if (
+      !currentTypes.includes(draggedPart) &&
+      draggedPart === partOrder[nextIndex]
+    ) {
+      setRocketParts([...rocketParts, { type: draggedPart }]);
+    }
+    setDraggedPart(null);
+  };
+
+  // SVG for the assembled rocket
+  const renderRocketSVG = () => {
+    let y = 0;
+    const svgParts = rocketParts.map((part, i) => {
+      let svg, height;
+      if (part.type === 'nose') {
+        svg = (
+          <polygon key="nose" points="40,0 80,80 0,80" fill="#6b21a8" stroke="#4c1d95" strokeWidth="4" />
+        );
+        height = 40;
+      } else if (part.type === 'body') {
+        svg = (
+          <rect key="body" x="20" y={y} width="40" height="80" fill="#bbb" stroke="#888" strokeWidth="4" rx="12" />
+        );
+        height = 80;
+      } else if (part.type === 'fins') {
+        svg = (
+          <>
+            <polygon key="finL" points={`20,${y+80} 0,${y+120} 20,${y+120}`} fill="#10b981" stroke="#047857" strokeWidth="4" />
+            <polygon key="finR" points={`60,${y+80} 80,${y+120} 60,${y+120}`} fill="#10b981" stroke="#047857" strokeWidth="4" />
+          </>
+        );
+        height = 40;
+      } else if (part.type === 'engine') {
+        svg = (
+          <>
+            <rect key="engine" x="30" y={y} width="20" height="32" fill="#f97316" stroke="#ea580c" strokeWidth="4" rx="5" />
+            <polygon key="flame" points={`20,${y+32} 60,${y+32} 40,${y+60}`} fill="#ea580c" stroke="#f97316" strokeWidth="2" />
+          </>
+        );
+        height = 28;
+      }
+      const partSVG = <g key={part.type} transform={`translate(0,${y})`}>{svg}</g>;
+      y += height;
+      return partSVG;
+    });
+    return (
+      <svg width="80" height="220" style={{ background: 'url("data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' fill=\'none\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Crect x=\'0\' y=\'0\' width=\'20\' height=\'20\' fill=\'%233b82f6\'/%3E%3Cpath d=\'M0 20H20V0\' stroke=\'%239ca3af\' stroke-width=\'1\'/%3E%3C/svg%3E")', borderRadius: 8 }}>
+        {svgParts}
+      </svg>
+    );
+  };
 
   return (
-    <div className="max-w-xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">2D Rocket Builder</h1>
-      <div className="flex gap-8">
-        {/* Part selectors */}
-        <div className="space-y-4">
-          <div>
-            <div className="font-semibold mb-1">Nose Cone</div>
-            {noseCones.map((nose) => (
-              <button
-                key={nose.name}
-                className={`px-2 py-1 rounded border ${selectedNose.name === nose.name ? 'bg-blue-200' : 'bg-white'}`}
-                onClick={() => setSelectedNose(nose)}
-              >
-                {nose.name}
-              </button>
-            ))}
+    <div className="flex h-[400px] max-w-2xl mx-auto p-6">
+      {/* Left palette */}
+      <div className="flex flex-col gap-4 items-center justify-center bg-slate-800 p-4 rounded-l-lg">
+        {partTypes.map((part) => (
+          <div
+            key={part.type}
+            draggable
+            onDragStart={() => handleDragStart(part.type)}
+            onDragEnd={handleDragEnd}
+            className={`cursor-grab bg-slate-700 rounded p-2 mb-2 border-2 ${draggedPart === part.type ? 'border-blue-400' : 'border-transparent'}`}
+            title={part.name}
+          >
+            {part.svg}
+            <div className="text-xs text-white text-center mt-1">{part.name}</div>
           </div>
-          <div>
-            <div className="font-semibold mb-1">Body Tube</div>
-            {bodyOptions.map((body) => (
-              <button
-                key={body.name}
-                className={`px-2 py-1 rounded border ${selectedBody.name === body.name ? 'bg-blue-200' : 'bg-white'}`}
-                onClick={() => setSelectedBody(body)}
-              >
-                {body.name}
-              </button>
-            ))}
-          </div>
-          <div>
-            <div className="font-semibold mb-1">Fins</div>
-            {finSets.map((fin) => (
-              <button
-                key={fin.name}
-                className={`px-2 py-1 rounded border ${selectedFins.name === fin.name ? 'bg-blue-200' : 'bg-white'}`}
-                onClick={() => setSelectedFins(fin)}
-              >
-                {fin.name}
-              </button>
-            ))}
-          </div>
-          <div>
-            <div className="font-semibold mb-1">Engine</div>
-            {engines.map((engine) => (
-              <button
-                key={engine.name}
-                className={`px-2 py-1 rounded border ${selectedEngine.name === engine.name ? 'bg-blue-200' : 'bg-white'}`}
-                onClick={() => setSelectedEngine(engine)}
-              >
-                {engine.name}
-              </button>
-            ))}
-          </div>
-        </div>
-        {/* SVG Rocket Side View */}
-        <svg width={svgWidth} height={svgHeight} className="border bg-gray-50 rounded">
-          {/* Body */}
-          <rect
-            x={svgWidth / 2 - bodyWidthPx / 2}
-            y={bodyY}
-            width={bodyWidthPx}
-            height={bodyLengthPx}
-            fill="#bbb"
-            stroke="#888"
-            strokeWidth={2}
-            rx={bodyWidthPx / 4}
-          />
-          {/* Nose Cone (triangle) */}
-          <polygon
-            points={`
-              ${svgWidth / 2 - bodyWidthPx / 2},${bodyY}
-              ${svgWidth / 2 + bodyWidthPx / 2},${bodyY}
-              ${svgWidth / 2},${noseY}
-            `}
-            fill="#6b21a8"
-            stroke="#4c1d95"
-            strokeWidth={2}
-          />
-          {/* Engine (rectangle) */}
-          <rect
-            x={svgWidth / 2 - engineWidthPx / 2}
-            y={engineY}
-            width={engineWidthPx}
-            height={engineHeightPx}
-            fill="#f97316"
-            stroke="#ea580c"
-            strokeWidth={2}
-            rx={engineWidthPx / 4}
-          />
-          {/* Fins (trapezoids) */}
-          <polygon
-            points={`
-              ${svgWidth / 2 - bodyWidthPx / 2},${finY}
-              ${svgWidth / 2 - bodyWidthPx / 2 - finWidthPx},${finY + finHeightPx}
-              ${svgWidth / 2 - bodyWidthPx / 2},${finY + finHeightPx}
-            `}
-            fill="#10b981"
-            stroke="#047857"
-            strokeWidth={2}
-          />
-          <polygon
-            points={`
-              ${svgWidth / 2 + bodyWidthPx / 2},${finY}
-              ${svgWidth / 2 + bodyWidthPx / 2 + finWidthPx},${finY + finHeightPx}
-              ${svgWidth / 2 + bodyWidthPx / 2},${finY + finHeightPx}
-            `}
-            fill="#10b981"
-            stroke="#047857"
-            strokeWidth={2}
-          />
-        </svg>
+        ))}
+      </div>
+      {/* Center build area */}
+      <div
+        className="flex-1 flex items-center justify-center bg-blue-900 relative"
+        style={{ backgroundImage: 'repeating-linear-gradient(0deg, #3b82f6 0, #3b82f6 1px, transparent 1px, transparent 20px), repeating-linear-gradient(90deg, #3b82f6 0, #3b82f6 1px, transparent 1px, transparent 20px)' }}
+        onDragOver={e => e.preventDefault()}
+        onDrop={handleDrop}
+      >
+        {rocketParts.length === 0 ? (
+          <div className="text-white opacity-60">Drag parts here to build your rocket</div>
+        ) : (
+          renderRocketSVG()
+        )}
       </div>
     </div>
   );
