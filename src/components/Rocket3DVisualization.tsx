@@ -211,7 +211,7 @@ const Rocket3D = ({ currentData, isSimulating, rocketDesign }: Rocket3DProps) =>
   let noseY = y + noseHeight / 2;
 
   return (
-    <group ref={rocketRef} scale={[40, 40, 40]}>
+    <group ref={rocketRef} scale={[15, 15, 15]}>
       {/* Engine */}
       {engine && (
         <CleanCylinder args={engine.args} position={[0, engineY, 0]}>

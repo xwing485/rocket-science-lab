@@ -189,7 +189,7 @@ const Rocket3DAssembly = ({ droppedParts, onRemovePart }: { droppedParts: Droppe
   };
 
   return (
-    <group ref={rocketRef} scale={[40, 40, 40]}>
+    <group ref={rocketRef} scale={[15, 15, 15]}>
       {/* DEBUG: Always render a large magenta body tube at the origin */}
       <CleanCylinder
         args={[0.2, 0.2, 1.5, 16]}
