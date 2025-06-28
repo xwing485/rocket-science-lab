@@ -11,6 +11,7 @@ interface RocketPart {
   drag: number;
   thrust?: number;
   stability?: number;
+  finCount?: number; // Allow custom fin count
 }
 
 interface DroppedParts {
@@ -47,6 +48,27 @@ const CleanBox = React.forwardRef<any, any>((props, ref) => {
   const geometry = new THREE.BoxGeometry(props.args[0], props.args[1], props.args[2]);
   return (
     <mesh ref={ref} geometry={geometry} position={props.position} onClick={props.onClick}>
+      {props.children}
+    </mesh>
+  );
+});
+
+// Realistic triangular fin geometry for Rocket Builder
+const RealisticFin = React.forwardRef<any, any>((props, ref) => {
+  const rootChord = props.rootChord || 0.03;
+  const tipChord = props.tipChord || 0.01;
+  const height = props.height || 0.035;
+  const thickness = props.thickness || 0.002;
+  const shape = new THREE.Shape();
+  shape.moveTo(0, 0);
+  shape.lineTo(rootChord, 0);
+  shape.lineTo(tipChord, height);
+  shape.lineTo(0, height);
+  shape.lineTo(0, 0);
+  const extrudeSettings = { depth: thickness, bevelEnabled: false };
+  const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+  return (
+    <mesh ref={ref} geometry={geometry} position={props.position} rotation={props.rotation} onClick={props.onClick}>
       {props.children}
     </mesh>
   );
@@ -164,32 +186,35 @@ const Rocket3DAssembly = ({ droppedParts, onRemovePart }: { droppedParts: Droppe
   // Helper function to render fins based on type
   const renderFins = (finPart: RocketPart, yPos: number) => {
     const config = getFinGeometry(finPart);
+    const count = finPart.finCount || config.finCount || 4;
     const fins = [];
-    const angleStep = (2 * Math.PI) / config.finCount;
-    // Attach to the outside of the body tube
-    const bodyRadius = 12 * 0.001; // 12mm radius in meters
-    const finOffset = bodyRadius + config.finSize.width / 2; // Place outside the body
-    for (let i = 0; i < config.finCount; i++) {
+    const angleStep = (2 * Math.PI) / count;
+    const bodyRadius = 12 * 0.001;
+    const finOffset = bodyRadius + 0.001;
+    for (let i = 0; i < count; i++) {
       const angle = i * angleStep;
       const x = Math.cos(angle) * finOffset;
       const z = Math.sin(angle) * finOffset;
       fins.push(
-        <CleanBox
+        <RealisticFin
           key={i}
-          args={[config.finSize.width, config.finSize.height, config.finSize.depth]}
-          position={[x, yPos - config.finSize.height / 2, z]}
+          rootChord={0.03}
+          tipChord={0.01}
+          height={0.035}
+          thickness={0.002}
+          position={[x, yPos - 0.0175, z]}
           rotation={[0, angle, 0]}
           onClick={() => handlePartClick(2)}
         >
           <meshPhongMaterial color={config.color} />
-        </CleanBox>
+        </RealisticFin>
       );
     }
     return fins;
   };
 
   return (
-    <group ref={rocketRef} scale={[15, 15, 15]}>
+    <group ref={rocketRef} scale={[5, 5, 5]}>
       {/* DEBUG: Always render a large magenta body tube at the origin */}
       <CleanCylinder
         args={[0.2, 0.2, 1.5, 16]}

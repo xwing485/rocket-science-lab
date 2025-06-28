@@ -1,4 +1,3 @@
-
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Wind } from 'lucide-react';
@@ -8,9 +7,11 @@ import { finSets } from '@/data/rocketParts';
 interface FinsSelectorProps {
   selectedFins: RocketPart;
   onFinsChange: (fins: RocketPart) => void;
+  finCount: number;
+  onFinCountChange: (count: number) => void;
 }
 
-const FinsSelector = ({ selectedFins, onFinsChange }: FinsSelectorProps) => {
+const FinsSelector = ({ selectedFins, onFinsChange, finCount, onFinCountChange }: FinsSelectorProps) => {
   return (
     <Card>
       <CardHeader>
@@ -21,6 +22,18 @@ const FinsSelector = ({ selectedFins, onFinsChange }: FinsSelectorProps) => {
         <CardDescription>Select fins for stability</CardDescription>
       </CardHeader>
       <CardContent>
+        <div className="mb-3">
+          <label className="block text-sm font-medium mb-1">Number of Fins</label>
+          <select
+            className="border rounded px-2 py-1"
+            value={finCount}
+            onChange={e => onFinCountChange(Number(e.target.value))}
+          >
+            {[3, 4, 5].map(n => (
+              <option key={n} value={n}>{n} fins</option>
+            ))}
+          </select>
+        </div>
         <div className="grid grid-cols-3 gap-3">
           {finSets.map((fins) => (
             <Button

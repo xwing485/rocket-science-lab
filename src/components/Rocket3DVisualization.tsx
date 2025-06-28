@@ -66,6 +66,28 @@ const CleanBox = React.forwardRef<any, any>((props, ref) => {
   );
 });
 
+// Realistic triangular fin geometry
+const RealisticFin = React.forwardRef<any, any>((props, ref) => {
+  // Fin shape: right triangle (root chord, tip chord, height)
+  const rootChord = props.rootChord || 0.03; // 30mm
+  const tipChord = props.tipChord || 0.01;  // 10mm
+  const height = props.height || 0.035;     // 35mm
+  const thickness = props.thickness || 0.002; // 2mm
+  const shape = new THREE.Shape();
+  shape.moveTo(0, 0);
+  shape.lineTo(rootChord, 0);
+  shape.lineTo(tipChord, height);
+  shape.lineTo(0, height);
+  shape.lineTo(0, 0);
+  const extrudeSettings = { depth: thickness, bevelEnabled: false };
+  const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+  return (
+    <mesh ref={ref} geometry={geometry} position={props.position} rotation={props.rotation}>
+      {props.children}
+    </mesh>
+  );
+});
+
 const Rocket3D = ({ currentData, isSimulating, rocketDesign }: Rocket3DProps) => {
   const rocketRef = useRef<THREE.Group>(null);
   const flameRef = useRef<THREE.Group>(null);
@@ -132,35 +154,29 @@ const Rocket3D = ({ currentData, isSimulating, rocketDesign }: Rocket3DProps) =>
   const getFinGeometry = (finPart: any) => {
     // Scale factor: 1 unit = 1mm in real world
     const scale = 0.001; // Convert mm to meters for 3D model
-    
+    const finCount = finPart?.finCount || 4;
     switch (finPart?.name) {
       case 'Standard Fins':
-        // Standard rectangular fins - 4 fins, medium size
-        // Width: 2mm, height: 30mm, depth: 15mm
         return {
-          finCount: 4,
+          finCount,
           finSize: { width: 2 * scale, height: 30 * scale, depth: 15 * scale },
           color: "#10B981"
         };
       case 'Large Fins':
-        // Large fins - 4 fins, bigger for more stability
-        // Width: 3mm, height: 40mm, depth: 20mm
         return {
-          finCount: 4,
+          finCount,
           finSize: { width: 3 * scale, height: 40 * scale, depth: 20 * scale },
           color: "#F59E0B"
         };
       case 'Swept Fins':
-        // Swept fins - 3 fins, swept back design
-        // Width: 2mm, height: 35mm, depth: 18mm
         return {
-          finCount: 3,
+          finCount,
           finSize: { width: 2 * scale, height: 35 * scale, depth: 18 * scale },
           color: "#EF4444"
         };
       default:
         return {
-          finCount: 4,
+          finCount,
           finSize: { width: 2 * scale, height: 30 * scale, depth: 15 * scale },
           color: "#10B981"
         };
@@ -236,20 +252,23 @@ const Rocket3D = ({ currentData, isSimulating, rocketDesign }: Rocket3DProps) =>
         const fins = [];
         const angleStep = (2 * Math.PI) / config.finCount;
         const bodyRadius = (rocketDesign.body.diameter/2) * 0.001;
-        const finOffset = bodyRadius + config.finSize.width / 2;
+        const finOffset = bodyRadius + (config.finSize ? config.finSize.width / 2 : 0.001);
         for (let i = 0; i < config.finCount; i++) {
           const angle = i * angleStep;
           const x = Math.cos(angle) * finOffset;
           const z = Math.sin(angle) * finOffset;
           fins.push(
-            <CleanBox
+            <RealisticFin
               key={i}
-              args={[config.finSize.width, config.finSize.height, config.finSize.depth]}
-              position={[x, bodyY - bodyHeight / 2 - config.finSize.height / 2, z]}
+              rootChord={0.03}
+              tipChord={0.01}
+              height={0.035}
+              thickness={0.002}
+              position={[x, bodyY - bodyHeight / 2 - 0.0175, z]}
               rotation={[0, angle, 0]}
             >
               <meshPhongMaterial color={config.color} />
-            </CleanBox>
+            </RealisticFin>
           );
         }
         return fins;

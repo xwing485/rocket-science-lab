@@ -23,6 +23,7 @@ const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: Ro
   const [selectedEngine, setSelectedEngine] = useState<RocketPart>(engines[0]);
   const [bodyDiameter, setBodyDiameter] = useState([24]);
   const [bodyLength, setBodyLength] = useState([200]);
+  const [finCount, setFinCount] = useState(4); // Default to 4 fins
   const [user, setUser] = useState<any>(null);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
@@ -63,7 +64,7 @@ const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: Ro
   const rocketDesign: RocketDesign = {
     nose: selectedNose,
     body: { diameter: bodyDiameter[0], length: bodyLength[0], mass: bodyMass },
-    fins: selectedFins,
+    fins: { ...selectedFins, finCount }, // Pass finCount to fins
     engine: selectedEngine,
     totalMass,
     totalDrag,
@@ -168,6 +169,8 @@ const RocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: Ro
             <FinsSelector 
               selectedFins={selectedFins} 
               onFinsChange={setSelectedFins} 
+              finCount={finCount}
+              onFinCountChange={setFinCount}
             />
             
             <EngineSelector 
