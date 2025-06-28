@@ -211,7 +211,7 @@ const Rocket3D = ({ currentData, isSimulating, rocketDesign }: Rocket3DProps) =>
   let noseY = y + noseHeight / 2;
 
   return (
-    <group ref={rocketRef} scale={[1, 1, 1]}>
+    <group ref={rocketRef} scale={[5, 5, 5]}>
       {/* Engine */}
       {engine && (
         <CleanCylinder args={engine.args} position={[0, engineY, 0]}>
@@ -304,8 +304,8 @@ const LaunchPad = () => {
 };
 
 const Ground = () => {
-  // Make the ground 4m x 4m and place it at y=0
-  const geometry = new THREE.PlaneGeometry(4, 4);
+  // Make the ground 20m x 20m and place it at y=0
+  const geometry = new THREE.PlaneGeometry(20, 20);
   return (
     <mesh
       geometry={geometry}
