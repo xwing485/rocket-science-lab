@@ -190,64 +190,76 @@ const Rocket3D = ({ currentData, isSimulating, rocketDesign }: Rocket3DProps) =>
     }
   };
 
-  // Helper function to render fins based on type
-  const renderFins = (finPart: any) => {
-    const config = getFinGeometry(finPart);
-    const fins = [];
-    const angleStep = (2 * Math.PI) / config.finCount;
-    
-    // Use the body tube radius for proper fin attachment
-    const bodyRadius = 12 * 0.001; // 12mm radius in meters
-
-    for (let i = 0; i < config.finCount; i++) {
-      const angle = i * angleStep;
-      const x = Math.cos(angle) * bodyRadius;
-      const z = Math.sin(angle) * bodyRadius;
-      
-      fins.push(
-        <CleanBox 
-          key={i}
-          args={[config.finSize.width, config.finSize.height, config.finSize.depth]} 
-          position={[x, 0, z]}
-        >
-          <meshPhongMaterial color={config.color} />
-        </CleanBox>
-      );
-    }
-
-    return fins;
-  };
-
-  // Use rocket design if provided, otherwise use default
-  const noseConfig = getNoseConeGeometry(rocketDesign?.nose);
-  const engineConfig = getEngineGeometry(rocketDesign?.engine);
+  // --- Stacking logic for simulation visualizer ---
+  // Get geometry for each part
+  const nose = rocketDesign?.nose ? getNoseConeGeometry(rocketDesign.nose) : null;
+  const body = rocketDesign?.body ? { args: [rocketDesign.body.diameter/2 * 0.001, rocketDesign.body.diameter/2 * 0.001, rocketDesign.body.length * 0.001, 8], color: "#FFFFFF" } : null;
+  const engine = rocketDesign?.engine ? getEngineGeometry(rocketDesign.engine) : null;
+  // Heights
+  const noseHeight = nose ? nose.args[1] : 0;
+  const bodyHeight = body ? body.args[2] : 0;
+  const engineHeight = engine ? engine.args[2] : 0;
+  // Y positions (stack from bottom up)
+  let y = 0;
+  // Engine (bottom)
+  let engineY = y + engineHeight / 2;
+  y += engineHeight;
+  // Body
+  let bodyY = y + bodyHeight / 2;
+  y += bodyHeight;
+  // Nose
+  let noseY = y + noseHeight / 2;
 
   return (
     <group ref={rocketRef} scale={[40, 40, 40]}>
-      {/* Nose Cone */}
-      <CleanCone args={noseConfig.args} position={[0, 1.2, 0]}>
-        <meshPhongMaterial color={noseConfig.color} />
-      </CleanCone>
-      
-      {/* Body Tube */}
-      <CleanCylinder args={[12 * 0.001, 12 * 0.001, 200 * 0.001, 8]} position={[0, 0.4, 0]}>
-        <meshPhongMaterial color="#FFFFFF" />
-      </CleanCylinder>
-      
-      {/* Fins */}
-      {rocketDesign?.fins && renderFins(rocketDesign.fins)}
-      
       {/* Engine */}
-      <CleanCylinder args={engineConfig.args} position={[0, -0.15, 0]}>
-        <meshPhongMaterial color={engineConfig.color} />
-      </CleanCylinder>
-      
-      {/* Engine Flame */}
-      <group ref={flameRef} position={[0, -0.15 - engineConfig.args[2]/2, 0]}>
-        <CleanCone args={[engineConfig.args[0], 0.8, 8]} position={[0, 0, 0]}>
+      {engine && (
+        <CleanCylinder args={engine.args} position={[0, engineY, 0]}>
+          <meshPhongMaterial color={engine.color} />
+        </CleanCylinder>
+      )}
+      {/* Body Tube */}
+      {body && (
+        <CleanCylinder args={body.args} position={[0, bodyY, 0]}>
+          <meshPhongMaterial color={body.color} />
+        </CleanCylinder>
+      )}
+      {/* Nose Cone */}
+      {nose && (
+        <CleanCone args={nose.args} position={[0, noseY, 0]}>
+          <meshPhongMaterial color={nose.color} />
+        </CleanCone>
+      )}
+      {/* Fins (attach to base of body) */}
+      {rocketDesign?.fins && body && (() => {
+        const config = getFinGeometry(rocketDesign.fins);
+        const fins = [];
+        const angleStep = (2 * Math.PI) / config.finCount;
+        const bodyRadius = (rocketDesign.body.diameter/2) * 0.001;
+        const finOffset = bodyRadius + config.finSize.width / 2;
+        for (let i = 0; i < config.finCount; i++) {
+          const angle = i * angleStep;
+          const x = Math.cos(angle) * finOffset;
+          const z = Math.sin(angle) * finOffset;
+          fins.push(
+            <CleanBox
+              key={i}
+              args={[config.finSize.width, config.finSize.height, config.finSize.depth]}
+              position={[x, bodyY - bodyHeight / 2 - config.finSize.height / 2, z]}
+              rotation={[0, angle, 0]}
+            >
+              <meshPhongMaterial color={config.color} />
+            </CleanBox>
+          );
+        }
+        return fins;
+      })()}
+      {/* Engine Flame (unchanged) */}
+      <group ref={flameRef} position={[0, engine ? engineY - engineHeight / 2 - engine.args[2]/2 : 0, 0, 0]}>
+        <CleanCone args={[engine ? engine.args[0] : 0.01, 0.8, 8]} position={[0, 0, 0]}>
           <meshBasicMaterial color="#FFD700" transparent opacity={0.8} />
         </CleanCone>
-        <CleanCone args={[engineConfig.args[0] * 0.6, 1.2, 8]} position={[0, 0, 0]}>
+        <CleanCone args={[engine ? engine.args[0] * 0.6 : 0.006, 1.2, 8]} position={[0, 0, 0]}>
           <meshBasicMaterial color="#FF4500" transparent opacity={0.6} />
         </CleanCone>
       </group>
