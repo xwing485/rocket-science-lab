@@ -61,49 +61,61 @@ const Rocket3DAssembly = ({ droppedParts, onRemovePart }: { droppedParts: Droppe
 
   // Helper function to get nose cone geometry based on type
   const getNoseConeGeometry = (nosePart: RocketPart) => {
+    // Scale factor: 1 unit = 1mm in real world
+    const scale = 0.001; // Convert mm to meters for 3D model
+    
     switch (nosePart.name) {
       case 'Pointed Cone':
         // Sharp, pointed cone - narrow and tall
-        return { args: [0.12, 0.5, 8], color: "#8B5CF6" };
+        // Base diameter: 24mm, height: 50mm (typical model rocket proportions)
+        return { args: [12 * scale, 50 * scale, 8], color: "#8B5CF6" };
       case 'Rounded Cone':
         // Rounded cone - wider and shorter with more segments for smoothness
-        return { args: [0.15, 0.4, 12], color: "#EC4899" };
+        // Base diameter: 24mm, height: 40mm
+        return { args: [12 * scale, 40 * scale, 12], color: "#EC4899" };
       case 'Blunt Cone':
         // Blunt cone - very wide and short
-        return { args: [0.18, 0.25, 6], color: "#06B6D4" };
+        // Base diameter: 24mm, height: 25mm
+        return { args: [12 * scale, 25 * scale, 6], color: "#06B6D4" };
       default:
-        return { args: [0.15, 0.4, 8], color: "#8B5CF6" };
+        return { args: [12 * scale, 40 * scale, 8], color: "#8B5CF6" };
     }
   };
 
   // Helper function to get fin geometry based on type
   const getFinGeometry = (finPart: RocketPart) => {
+    // Scale factor: 1 unit = 1mm in real world
+    const scale = 0.001; // Convert mm to meters for 3D model
+    
     switch (finPart.name) {
       case 'Standard Fins':
         // Standard rectangular fins - 4 fins, medium size
+        // Width: 2mm, height: 30mm, depth: 15mm
         return {
           finCount: 4,
-          finSize: { width: 0.03, height: 0.6, depth: 0.3 },
+          finSize: { width: 2 * scale, height: 30 * scale, depth: 15 * scale },
           color: "#10B981"
         };
       case 'Large Fins':
         // Large fins - 4 fins, bigger for more stability
+        // Width: 3mm, height: 40mm, depth: 20mm
         return {
           finCount: 4,
-          finSize: { width: 0.04, height: 0.8, depth: 0.4 },
+          finSize: { width: 3 * scale, height: 40 * scale, depth: 20 * scale },
           color: "#F59E0B"
         };
       case 'Swept Fins':
         // Swept fins - 3 fins, swept back design
+        // Width: 2mm, height: 35mm, depth: 18mm
         return {
           finCount: 3,
-          finSize: { width: 0.03, height: 0.7, depth: 0.35 },
+          finSize: { width: 2 * scale, height: 35 * scale, depth: 18 * scale },
           color: "#EF4444"
         };
       default:
         return {
           finCount: 4,
-          finSize: { width: 0.03, height: 0.6, depth: 0.3 },
+          finSize: { width: 2 * scale, height: 30 * scale, depth: 15 * scale },
           color: "#10B981"
         };
     }
@@ -111,35 +123,44 @@ const Rocket3DAssembly = ({ droppedParts, onRemovePart }: { droppedParts: Droppe
 
   // Helper function to get engine geometry based on type
   const getEngineGeometry = (enginePart: RocketPart) => {
+    // Scale factor: 1 unit = 1mm in real world
+    const scale = 0.001; // Convert mm to meters for 3D model
+    
     switch (enginePart.name) {
       case 'A8-3 Engine':
         // Smallest engine - low thrust
-        return { args: [0.08, 0.15, 0.25, 8], color: "#F97316" };
+        // Diameter: 18mm, length: 70mm
+        return { args: [9 * scale, 9 * scale, 70 * scale, 8], color: "#F97316" };
       case 'B6-4 Engine':
         // Medium engine - medium thrust
-        return { args: [0.1, 0.15, 0.3, 8], color: "#DC2626" };
+        // Diameter: 18mm, length: 70mm (same size, different propellant)
+        return { args: [9 * scale, 9 * scale, 70 * scale, 8], color: "#DC2626" };
       case 'C6-5 Engine':
         // Largest engine - high thrust
-        return { args: [0.12, 0.15, 0.35, 8], color: "#7C3AED" };
+        // Diameter: 18mm, length: 70mm (same size, different propellant)
+        return { args: [9 * scale, 9 * scale, 70 * scale, 8], color: "#7C3AED" };
       default:
-        return { args: [0.1, 0.15, 0.3, 8], color: "#F97316" };
+        return { args: [9 * scale, 9 * scale, 70 * scale, 8], color: "#F97316" };
     }
   };
 
   // Helper function to get body tube geometry based on type
   const getBodyTubeGeometry = (bodyPart: RocketPart) => {
+    // Scale factor: 1 unit = 1mm in real world
+    const scale = 0.001; // Convert mm to meters for 3D model
+    
     switch (bodyPart.name) {
       case 'Standard Tube':
-        // Standard diameter and length
-        return { args: [0.15, 0.15, 0.8, 8], color: "#FFFFFF" };
+        // Standard diameter: 24mm, length: 200mm
+        return { args: [12 * scale, 12 * scale, 200 * scale, 8], color: "#FFFFFF" };
       case 'Wide Tube':
-        // Wider diameter for more payload capacity
-        return { args: [0.18, 0.18, 0.8, 8], color: "#E5E7EB" };
+        // Wider diameter: 30mm, length: 200mm
+        return { args: [15 * scale, 15 * scale, 200 * scale, 8], color: "#E5E7EB" };
       case 'Narrow Tube':
-        // Narrower diameter for less drag
-        return { args: [0.12, 0.12, 0.8, 8], color: "#F3F4F6" };
+        // Narrower diameter: 18mm, length: 200mm
+        return { args: [9 * scale, 9 * scale, 200 * scale, 8], color: "#F3F4F6" };
       default:
-        return { args: [0.15, 0.15, 0.8, 8], color: "#FFFFFF" };
+        return { args: [12 * scale, 12 * scale, 200 * scale, 8], color: "#FFFFFF" };
     }
   };
 
@@ -148,11 +169,14 @@ const Rocket3DAssembly = ({ droppedParts, onRemovePart }: { droppedParts: Droppe
     const config = getFinGeometry(finPart);
     const fins = [];
     const angleStep = (2 * Math.PI) / config.finCount;
+    
+    // Use the body tube radius for proper fin attachment
+    const bodyRadius = 12 * 0.001; // 12mm radius in meters
 
     for (let i = 0; i < config.finCount; i++) {
       const angle = i * angleStep;
-      const x = Math.cos(angle) * 0.18;
-      const z = Math.sin(angle) * 0.18;
+      const x = Math.cos(angle) * bodyRadius;
+      const z = Math.sin(angle) * bodyRadius;
       
       fins.push(
         <CleanBox 

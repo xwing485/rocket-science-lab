@@ -47,9 +47,9 @@ const RocketSimulation = ({ onSectionChange, onProgressUpdate, rocketDesign, onS
 
   // Default rocket if none provided
   const defaultRocket: RocketDesign = {
-    nose: { name: 'Cone Nose', mass: 10, drag: 0.5 },
+    nose: { name: 'Pointed Cone', mass: 10, drag: 0.4 },
     body: { diameter: 24, length: 200, mass: 20 },
-    fins: { name: 'Standard Fins', mass: 15, drag: 0.8, stability: 2.0 },
+    fins: { name: 'Standard Fins', mass: 15, drag: 0.2, stability: 2.0 },
     engine: { name: 'A8-3 Engine', mass: 24, drag: 0.1, thrust: 2.5 },
     totalMass: 69,
     totalDrag: 1.4,
