@@ -73,6 +73,49 @@ export default function RocketSimulation2D({ rocketDesign }: RocketSimulation2DP
   // Center rocket, but don't scroll below ground
   const cameraY = Math.max(0, (padY - rocketHeight - rocketAltitude * altitudeScale) - svgHeight / 2 + rocketHeight / 2);
 
+  // SVG part styles based on rocketDesign
+  // Nose cone
+  let noseColor = '#222';
+  let noseShape = 'pointed';
+  if (rocket.nose.name.toLowerCase().includes('rounded')) {
+    noseColor = '#888';
+    noseShape = 'rounded';
+  } else if (rocket.nose.name.toLowerCase().includes('blunt')) {
+    noseColor = '#c02626';
+    noseShape = 'blunt';
+  }
+
+  // Body tube
+  let bodyColor = '#e5e7eb';
+  let bodyWidth = 16;
+  if (rocket.body.diameter >= 30) {
+    bodyColor = '#bae6fd';
+    bodyWidth = 22;
+  } else if (rocket.body.diameter <= 20) {
+    bodyColor = '#d1d5db';
+    bodyWidth = 10;
+  }
+  let bodyLength = rocketHeight - noseHeight - engineHeight;
+
+  // Fins
+  let finColor = '#10b981';
+  let finShape = 'standard';
+  if (rocket.fins.name.toLowerCase().includes('large')) {
+    finColor = '#3b82f6';
+    finShape = 'large';
+  } else if (rocket.fins.name.toLowerCase().includes('swept')) {
+    finColor = '#f59e42';
+    finShape = 'swept';
+  }
+
+  // Engine
+  let engineColor = '#f97316';
+  if (rocket.engine.name.toLowerCase().includes('b6')) {
+    engineColor = '#dc2626';
+  } else if (rocket.engine.name.toLowerCase().includes('c6')) {
+    engineColor = '#7c3aed';
+  }
+
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isLaunching) {
@@ -158,22 +201,46 @@ export default function RocketSimulation2D({ rocketDesign }: RocketSimulation2DP
               {/* Launch Pad */}
               <rect x={svgWidth/2 - 40} y={padY} width={80} height={20} fill="#232323" stroke="#111" strokeWidth={2} rx={4} />
               {/* Rocket */}
-              <g transform={`translate(${rocketPosition.x - rocketWidth/2}, ${rocketPosition.y})`}>
+              <g transform={`translate(${rocketPosition.x - bodyWidth/2}, ${rocketPosition.y})`}>
                 {/* Engine flame (only during powered ascent) */}
                 {isLaunching && flightTime <= burnTime && (
-                  <ellipse cx={rocketWidth/2} cy={rocketHeight + engineHeight/2} rx={10} ry={8} fill="#fff7ae" opacity="0.7" />
+                  <ellipse cx={bodyWidth/2} cy={rocketHeight + engineHeight/2} rx={10} ry={8} fill="#fff7ae" opacity="0.7" />
                 )}
                 {/* Engine */}
-                <rect x={rocketWidth/2 - 6} y={rocketHeight - engineHeight} width={12} height={engineHeight} fill="#888" stroke="#444" strokeWidth={2} rx={2} />
+                <rect x={bodyWidth/2 - 6} y={rocketHeight - engineHeight} width={12} height={engineHeight} fill={engineColor} stroke="#444" strokeWidth={2} rx={2} />
                 {/* Body */}
-                <rect x={rocketWidth/2 - 8} y={noseHeight} width={16} height={rocketHeight - noseHeight - engineHeight} fill="#e5e7eb" stroke="#888" strokeWidth={2} />
+                <rect x={bodyWidth/2 - bodyWidth/2} y={noseHeight} width={bodyWidth} height={bodyLength} fill={bodyColor} stroke="#888" strokeWidth={2} />
                 {/* Body outline */}
-                <rect x={rocketWidth/2 - 8} y={noseHeight} width={16} height={rocketHeight - noseHeight - engineHeight} fill="none" stroke="#222" strokeWidth={1.5} />
+                <rect x={bodyWidth/2 - bodyWidth/2} y={noseHeight} width={bodyWidth} height={bodyLength} fill="none" stroke="#222" strokeWidth={1.5} />
                 {/* Nose cone */}
-                <polygon points={`${rocketWidth/2},0 0,${noseHeight} ${rocketWidth},${noseHeight}`} fill="#222" stroke="#111" strokeWidth={2} />
+                {noseShape === 'pointed' && (
+                  <polygon points={`${bodyWidth/2},0 0,${noseHeight} ${bodyWidth},${noseHeight}`} fill={noseColor} stroke="#111" strokeWidth={2} />
+                )}
+                {noseShape === 'rounded' && (
+                  <ellipse cx={bodyWidth/2} cy={noseHeight/2} rx={bodyWidth/2} ry={noseHeight/2} fill={noseColor} stroke="#111" strokeWidth={2} />
+                )}
+                {noseShape === 'blunt' && (
+                  <rect x={bodyWidth/2 - bodyWidth/2} y={0} width={bodyWidth} height={noseHeight} fill={noseColor} stroke="#111" strokeWidth={2} rx={bodyWidth/3} />
+                )}
                 {/* Fins */}
-                <polygon points={`0,${rocketHeight-engineHeight-8} -12,${rocketHeight-engineHeight+16} 0,${rocketHeight-engineHeight+8}`} fill="#888" stroke="#444" strokeWidth={2} />
-                <polygon points={`${rocketWidth},${rocketHeight-engineHeight-8} ${rocketWidth+12},${rocketHeight-engineHeight+16} ${rocketWidth},${rocketHeight-engineHeight+8}`} fill="#888" stroke="#444" strokeWidth={2} />
+                {finShape === 'standard' && (
+                  <>
+                    <polygon points={`0,${rocketHeight-engineHeight-8} -12,${rocketHeight-engineHeight+16} 0,${rocketHeight-engineHeight+8}`} fill={finColor} stroke="#444" strokeWidth={2} />
+                    <polygon points={`${bodyWidth},${rocketHeight-engineHeight-8} ${bodyWidth+12},${rocketHeight-engineHeight+16} ${bodyWidth},${rocketHeight-engineHeight+8}`} fill={finColor} stroke="#444" strokeWidth={2} />
+                  </>
+                )}
+                {finShape === 'large' && (
+                  <>
+                    <polygon points={`0,${rocketHeight-engineHeight-8} -18,${rocketHeight-engineHeight+28} 0,${rocketHeight-engineHeight+8}`} fill={finColor} stroke="#444" strokeWidth={2} />
+                    <polygon points={`${bodyWidth},${rocketHeight-engineHeight-8} ${bodyWidth+18},${rocketHeight-engineHeight+28} ${bodyWidth},${rocketHeight-engineHeight+8}`} fill={finColor} stroke="#444" strokeWidth={2} />
+                  </>
+                )}
+                {finShape === 'swept' && (
+                  <>
+                    <polygon points={`0,${rocketHeight-engineHeight-8} -10,${rocketHeight-engineHeight+24} 8,${rocketHeight-engineHeight+8}`} fill={finColor} stroke="#444" strokeWidth={2} />
+                    <polygon points={`${bodyWidth},${rocketHeight-engineHeight-8} ${bodyWidth+10},${rocketHeight-engineHeight+24} ${bodyWidth-8},${rocketHeight-engineHeight+8}`} fill={finColor} stroke="#444" strokeWidth={2} />
+                  </>
+                )}
               </g>
             </svg>
             <div className="mt-4 space-y-2">
