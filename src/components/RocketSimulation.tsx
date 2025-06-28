@@ -3,8 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Play, RotateCcw, TrendingUp, Clock } from 'lucide-react';
-import Rocket3DVisualization from './Rocket3DVisualization';
-import RocketAICoach from './RocketAICoach';
 
 interface RocketDesign {
   nose: { name: string; mass: number; drag: number };
@@ -40,19 +38,22 @@ interface RocketSimulationProps {
   onSimulationUpdate: (results: SimulationResults) => void;
 }
 
-// Simple 2D Rocket Simulation (SVG side view, flight path, graphs)
+// Realistic 2D Rocket Simulation (SVG side view, flight path, graphs)
 export default function RocketSimulation2D() {
   const [isLaunching, setIsLaunching] = useState(false);
   const [flightTime, setFlightTime] = useState(0);
   const [rocketPosition, setRocketPosition] = useState({ x: 100, y: 350 });
   const [flightData, setFlightData] = useState<Array<{time: number, altitude: number, velocity: number}>>([]);
 
-  // Simulation parameters
-  const thrust = 50; // N
-  const mass = 0.2; // kg
+  // Realistic simulation parameters
+  const thrust = 100; // N (engine thrust)
+  const mass = 0.5; // kg (total rocket mass)
   const gravity = 9.81; // m/s²
-  const drag = 0.1; // drag coefficient
-  const timeStep = 0.1; // seconds
+  const dragCoeff = 0.3; // drag coefficient
+  const crossSectionalArea = 0.01; // m² (π * radius²)
+  const airDensity = 1.225; // kg/m³ (at sea level)
+  const timeStep = 0.05; // seconds (smaller for more accuracy)
+  const burnTime = 2.0; // seconds (engine burn duration)
 
   // SVG dimensions
   const svgWidth = 400;
@@ -71,29 +72,46 @@ export default function RocketSimulation2D() {
         setFlightTime(prev => {
           const newTime = prev + timeStep;
           
-          // Simple physics simulation
-          const acceleration = (thrust - mass * gravity - drag * newTime) / mass;
-          const velocity = Math.max(0, acceleration * newTime);
-          const altitude = Math.max(0, 0.5 * acceleration * newTime * newTime);
+          // Realistic physics simulation
+          let acceleration = 0;
+          let velocity = 0;
+          let altitude = 0;
+          
+          if (newTime <= burnTime) {
+            // Powered ascent phase
+            const dragForce = 0.5 * dragCoeff * airDensity * crossSectionalArea * Math.pow(velocity, 2);
+            acceleration = (thrust - mass * gravity - dragForce) / mass;
+            velocity = Math.max(0, acceleration * newTime);
+            altitude = 0.5 * acceleration * newTime * newTime;
+          } else {
+            // Ballistic descent phase (no thrust)
+            const timeSinceBurnout = newTime - burnTime;
+            const burnoutVelocity = (thrust - mass * gravity) / mass * burnTime;
+            const burnoutAltitude = 0.5 * ((thrust - mass * gravity) / mass) * burnTime * burnTime;
+            
+            // Parabolic trajectory: h = h0 + v0*t - 0.5*g*t²
+            altitude = burnoutAltitude + burnoutVelocity * timeSinceBurnout - 0.5 * gravity * timeSinceBurnout * timeSinceBurnout;
+            velocity = burnoutVelocity - gravity * timeSinceBurnout;
+          }
           
           // Update rocket position (scaled for SVG)
           const rocketX = 100; // Center horizontally
-          const rocketY = launchPadY - (altitude * 2); // Scale altitude for visibility
+          const rocketY = Math.max(launchPadY - rocketHeight, launchPadY - (altitude * 1.5)); // Scale altitude for visibility
           
           setRocketPosition({ x: rocketX, y: rocketY });
           
           // Store flight data
-          setFlightData(prev => [...prev, { time: newTime, altitude, velocity }]);
+          setFlightData(prev => [...prev, { time: newTime, altitude: Math.max(0, altitude), velocity: Math.max(0, velocity) }]);
           
-          // Stop simulation after 10 seconds or when rocket hits ground
-          if (newTime > 10 || altitude <= 0) {
+          // Stop simulation when rocket hits ground or after 15 seconds
+          if (newTime > 15 || altitude <= 0) {
             setIsLaunching(false);
             return 0;
           }
           
           return newTime;
         });
-      }, 100); // Update every 100ms
+      }, 50); // Update every 50ms for smoother animation
     }
 
     return () => clearInterval(interval);
@@ -116,8 +134,8 @@ export default function RocketSimulation2D() {
   // Generate flight path points
   const flightPathPoints = flightData
     .map((point, index) => {
-      const x = 100 + index * 2; // Spread horizontally
-      const y = launchPadY - (point.altitude * 2);
+      const x = 100 + index * 1.5; // Spread horizontally
+      const y = launchPadY - (point.altitude * 1.5);
       return `${x},${y}`;
     })
     .join(' ');
@@ -223,7 +241,7 @@ export default function RocketSimulation2D() {
                 <svg width={350} height={150} className="border bg-white rounded">
                   {flightData.length > 1 && (
                     <polyline
-                      points={flightData.map((point, i) => `${i * 3},${150 - point.altitude * 2}`).join(' ')}
+                      points={flightData.map((point, i) => `${i * 2},${150 - point.altitude * 1.5}`).join(' ')}
                       fill="none"
                       stroke="#10b981"
                       strokeWidth={2}
@@ -240,7 +258,7 @@ export default function RocketSimulation2D() {
                 <svg width={350} height={150} className="border bg-white rounded">
                   {flightData.length > 1 && (
                     <polyline
-                      points={flightData.map((point, i) => `${i * 3},${150 - point.velocity * 3}`).join(' ')}
+                      points={flightData.map((point, i) => `${i * 2},${150 - point.velocity * 2}`).join(' ')}
                       fill="none"
                       stroke="#f59e0b"
                       strokeWidth={2}
