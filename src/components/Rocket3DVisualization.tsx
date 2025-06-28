@@ -108,12 +108,15 @@ const Rocket3D = ({ currentData, isSimulating, rocketDesign }: Rocket3DProps) =>
   // Helper function to get nose cone geometry based on type
   const getNoseConeGeometry = (nosePart: any) => {
     switch (nosePart?.name) {
-      case 'Cone Nose':
-        return { args: [0.15, 0.4, 8], color: "#8B5CF6" };
-      case 'Ogive Nose':
-        return { args: [0.12, 0.5, 12], color: "#EC4899" };
-      case 'Parabolic Nose':
-        return { args: [0.18, 0.35, 6], color: "#06B6D4" };
+      case 'Pointed Cone':
+        // Sharp, pointed cone - narrow and tall
+        return { args: [0.12, 0.5, 8], color: "#8B5CF6" };
+      case 'Rounded Cone':
+        // Rounded cone - wider and shorter with more segments for smoothness
+        return { args: [0.15, 0.4, 12], color: "#EC4899" };
+      case 'Blunt Cone':
+        // Blunt cone - very wide and short
+        return { args: [0.18, 0.25, 6], color: "#06B6D4" };
       default:
         return { args: [0.15, 0.4, 8], color: "#8B5CF6" };
     }

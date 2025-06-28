@@ -259,19 +259,26 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
                 ) : (
                   <div className="h-[400px] bg-gradient-to-b from-blue-900 to-blue-300 rounded-lg border-2 border-dashed border-muted-foreground/30 relative">
                     {/* Drop zones for original interface */}
-                    <div 
+                    <div
                       onDragOver={handleDragOver}
                       onDrop={(e) => handleDrop(e, 0)}
                       className="absolute top-2 left-2 right-2 h-20 border-2 border-dashed border-white/30 rounded-lg flex items-center justify-center text-white text-sm hover:bg-white/10 transition-colors"
                     >
                       {droppedParts[0] ? (
-                        <div className="text-center">
-                          <div className="font-medium">{droppedParts[0].name}</div>
-                          <button 
+                        <div className="w-full h-full flex items-center justify-center relative p-1">
+                          {droppedParts[0].image ? (
+                            <div className="flex items-center justify-center w-full">
+                              <span className="font-medium text-white text-sm absolute left-2">{droppedParts[0].name}</span>
+                              <img src={droppedParts[0].image} alt={droppedParts[0].name} className="h-16 object-contain" />
+                            </div>
+                          ) : (
+                            <div className="font-medium">{droppedParts[0].name}</div>
+                          )}
+                          <button
                             onClick={() => removePart(0)}
-                            className="text-xs text-red-300 hover:text-red-100"
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs"
                           >
-                            Remove
+                            &times;
                           </button>
                         </div>
                       ) : (
@@ -279,19 +286,26 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
                       )}
                     </div>
 
-                    <div 
+                    <div
                       onDragOver={handleDragOver}
                       onDrop={(e) => handleDrop(e, 1)}
                       className="absolute top-24 left-2 right-2 h-32 border-2 border-dashed border-white/30 rounded-lg flex items-center justify-center text-white text-sm hover:bg-white/10 transition-colors"
                     >
                       {droppedParts[1] ? (
-                        <div className="text-center">
-                          <div className="font-medium">{droppedParts[1].name}</div>
-                          <button 
+                        <div className="w-full h-full flex items-center justify-center relative p-1">
+                          {droppedParts[1].image ? (
+                             <div className="flex items-center justify-center w-full">
+                              <span className="font-medium text-white text-sm absolute left-2">{droppedParts[1].name}</span>
+                              <img src={droppedParts[1].image} alt={droppedParts[1].name} className="h-24 object-contain" />
+                            </div>
+                          ) : (
+                            <div className="font-medium">{droppedParts[1].name}</div>
+                          )}
+                          <button
                             onClick={() => removePart(1)}
-                            className="text-xs text-red-300 hover:text-red-100"
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs"
                           >
-                            Remove
+                            &times;
                           </button>
                         </div>
                       ) : (
@@ -299,19 +313,26 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
                       )}
                     </div>
 
-                    <div 
+                    <div
                       onDragOver={handleDragOver}
                       onDrop={(e) => handleDrop(e, 2)}
                       className="absolute top-60 left-2 right-2 h-20 border-2 border-dashed border-white/30 rounded-lg flex items-center justify-center text-white text-sm hover:bg-white/10 transition-colors"
                     >
                       {droppedParts[2] ? (
-                        <div className="text-center">
-                          <div className="font-medium">{droppedParts[2].name}</div>
-                          <button 
+                         <div className="w-full h-full flex items-center justify-center relative p-1">
+                          {droppedParts[2].image ? (
+                             <div className="flex items-center justify-center w-full">
+                              <span className="font-medium text-white text-sm absolute left-2">{droppedParts[2].name}</span>
+                              <img src={droppedParts[2].image} alt={droppedParts[2].name} className="h-16 object-contain" />
+                            </div>
+                          ) : (
+                            <div className="font-medium">{droppedParts[2].name}</div>
+                          )}
+                           <button
                             onClick={() => removePart(2)}
-                            className="text-xs text-red-300 hover:text-red-100"
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs"
                           >
-                            Remove
+                            &times;
                           </button>
                         </div>
                       ) : (
@@ -319,19 +340,26 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
                       )}
                     </div>
 
-                    <div 
+                    <div
                       onDragOver={handleDragOver}
                       onDrop={(e) => handleDrop(e, 3)}
                       className="absolute bottom-2 left-2 right-2 h-20 border-2 border-dashed border-white/30 rounded-lg flex items-center justify-center text-white text-sm hover:bg-white/10 transition-colors"
                     >
                       {droppedParts[3] ? (
-                        <div className="text-center">
-                          <div className="font-medium">{droppedParts[3].name}</div>
-                          <button 
+                         <div className="w-full h-full flex items-center justify-center relative p-1">
+                          {droppedParts[3].image ? (
+                             <div className="flex items-center justify-center w-full">
+                              <span className="font-medium text-white text-sm absolute left-2">{droppedParts[3].name}</span>
+                              <img src={droppedParts[3].image} alt={droppedParts[3].name} className="h-16 object-contain" />
+                            </div>
+                          ) : (
+                            <div className="font-medium">{droppedParts[3].name}</div>
+                          )}
+                          <button
                             onClick={() => removePart(3)}
-                            className="text-xs text-red-300 hover:text-red-100"
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs"
                           >
-                            Remove
+                            &times;
                           </button>
                         </div>
                       ) : (

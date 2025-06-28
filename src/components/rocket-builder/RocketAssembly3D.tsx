@@ -62,12 +62,15 @@ const Rocket3DAssembly = ({ droppedParts, onRemovePart }: { droppedParts: Droppe
   // Helper function to get nose cone geometry based on type
   const getNoseConeGeometry = (nosePart: RocketPart) => {
     switch (nosePart.name) {
-      case 'Cone Nose':
-        return { args: [0.15, 0.4, 8], color: "#8B5CF6" };
-      case 'Ogive Nose':
-        return { args: [0.12, 0.5, 12], color: "#EC4899" };
-      case 'Parabolic Nose':
-        return { args: [0.18, 0.35, 6], color: "#06B6D4" };
+      case 'Pointed Cone':
+        // Sharp, pointed cone - narrow and tall
+        return { args: [0.12, 0.5, 8], color: "#8B5CF6" };
+      case 'Rounded Cone':
+        // Rounded cone - wider and shorter with more segments for smoothness
+        return { args: [0.15, 0.4, 12], color: "#EC4899" };
+      case 'Blunt Cone':
+        // Blunt cone - very wide and short
+        return { args: [0.18, 0.25, 6], color: "#06B6D4" };
       default:
         return { args: [0.15, 0.4, 8], color: "#8B5CF6" };
     }
@@ -77,18 +80,21 @@ const Rocket3DAssembly = ({ droppedParts, onRemovePart }: { droppedParts: Droppe
   const getFinGeometry = (finPart: RocketPart) => {
     switch (finPart.name) {
       case 'Standard Fins':
+        // Standard rectangular fins - 4 fins, medium size
         return {
           finCount: 4,
           finSize: { width: 0.03, height: 0.6, depth: 0.3 },
           color: "#10B981"
         };
       case 'Large Fins':
+        // Large fins - 4 fins, bigger for more stability
         return {
           finCount: 4,
           finSize: { width: 0.04, height: 0.8, depth: 0.4 },
           color: "#F59E0B"
         };
       case 'Swept Fins':
+        // Swept fins - 3 fins, swept back design
         return {
           finCount: 3,
           finSize: { width: 0.03, height: 0.7, depth: 0.35 },
@@ -107,13 +113,33 @@ const Rocket3DAssembly = ({ droppedParts, onRemovePart }: { droppedParts: Droppe
   const getEngineGeometry = (enginePart: RocketPart) => {
     switch (enginePart.name) {
       case 'A8-3 Engine':
+        // Smallest engine - low thrust
         return { args: [0.08, 0.15, 0.25, 8], color: "#F97316" };
       case 'B6-4 Engine':
+        // Medium engine - medium thrust
         return { args: [0.1, 0.15, 0.3, 8], color: "#DC2626" };
       case 'C6-5 Engine':
+        // Largest engine - high thrust
         return { args: [0.12, 0.15, 0.35, 8], color: "#7C3AED" };
       default:
         return { args: [0.1, 0.15, 0.3, 8], color: "#F97316" };
+    }
+  };
+
+  // Helper function to get body tube geometry based on type
+  const getBodyTubeGeometry = (bodyPart: RocketPart) => {
+    switch (bodyPart.name) {
+      case 'Standard Tube':
+        // Standard diameter and length
+        return { args: [0.15, 0.15, 0.8, 8], color: "#FFFFFF" };
+      case 'Wide Tube':
+        // Wider diameter for more payload capacity
+        return { args: [0.18, 0.18, 0.8, 8], color: "#E5E7EB" };
+      case 'Narrow Tube':
+        // Narrower diameter for less drag
+        return { args: [0.12, 0.12, 0.8, 8], color: "#F3F4F6" };
+      default:
+        return { args: [0.15, 0.15, 0.8, 8], color: "#FFFFFF" };
     }
   };
 
@@ -160,15 +186,18 @@ const Rocket3DAssembly = ({ droppedParts, onRemovePart }: { droppedParts: Droppe
       })()}
       
       {/* Body Tube - Position 1 */}
-      {droppedParts[1] && (
-        <CleanCylinder 
-          args={[0.15, 0.15, 0.8, 8]} 
-          position={[0, 0.4, 0]}
-          onClick={() => handlePartClick(1)}
-        >
-          <meshPhongMaterial color="#FFFFFF" />
-        </CleanCylinder>
-      )}
+      {droppedParts[1] && (() => {
+        const config = getBodyTubeGeometry(droppedParts[1]);
+        return (
+          <CleanCylinder 
+            args={config.args} 
+            position={[0, 0.4, 0]}
+            onClick={() => handlePartClick(1)}
+          >
+            <meshPhongMaterial color={config.color} />
+          </CleanCylinder>
+        );
+      })()}
       
       {/* Fins - Position 2 */}
       {droppedParts[2] && renderFins(droppedParts[2])}
