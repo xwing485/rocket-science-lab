@@ -166,6 +166,91 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
     onSectionChange('simulate');
   };
 
+  // SVG part styles for preview
+  const getPartStyles = (part, type) => {
+    if (!part) return {};
+    if (type === 'nose') {
+      if (part.name.toLowerCase().includes('rounded')) return { color: '#888', shape: 'rounded' };
+      if (part.name.toLowerCase().includes('blunt')) return { color: '#c02626', shape: 'blunt' };
+      return { color: '#222', shape: 'pointed' };
+    }
+    if (type === 'body') {
+      if (part.diameter >= 30) return { color: '#bae6fd', width: 22 };
+      if (part.diameter <= 20) return { color: '#d1d5db', width: 10 };
+      return { color: '#e5e7eb', width: 16 };
+    }
+    if (type === 'fins') {
+      if (part.name.toLowerCase().includes('large')) return { color: '#3b82f6', shape: 'large' };
+      if (part.name.toLowerCase().includes('swept')) return { color: '#f59e42', shape: 'swept' };
+      return { color: '#10b981', shape: 'standard' };
+    }
+    if (type === 'engine') {
+      if (part.name.toLowerCase().includes('b6')) return { color: '#dc2626' };
+      if (part.name.toLowerCase().includes('c6')) return { color: '#7c3aed' };
+      return { color: '#f97316' };
+    }
+    return {};
+  };
+
+  // Live SVG preview of the current rocket
+  const renderRocketPreview = () => {
+    const nose = droppedParts[0];
+    const body = droppedParts[1];
+    const fins = droppedParts[2];
+    const engine = droppedParts[3];
+    const noseStyle = getPartStyles(nose, 'nose');
+    const bodyStyle = getPartStyles(body, 'body');
+    const finsStyle = getPartStyles(fins, 'fins');
+    const engineStyle = getPartStyles(engine, 'engine');
+    const rocketHeight = 120;
+    const noseHeight = 24;
+    const engineHeight = 18;
+    const bodyHeight = 60;
+    const bodyWidth = bodyStyle.width || 16;
+    let y = 0;
+    return (
+      <svg width={60} height={rocketHeight + 20} style={{ background: 'none', display: 'block', margin: '0 auto' }}>
+        {/* Nose */}
+        {nose && noseStyle.shape === 'pointed' && (
+          <polygon points={`${bodyWidth/2},${y} 0,${y+noseHeight} ${bodyWidth},${y+noseHeight}`} fill={noseStyle.color} stroke="#111" strokeWidth={2} />
+        )}
+        {nose && noseStyle.shape === 'rounded' && (
+          <ellipse cx={bodyWidth/2} cy={y+noseHeight/2} rx={bodyWidth/2} ry={noseHeight/2} fill={noseStyle.color} stroke="#111" strokeWidth={2} />
+        )}
+        {nose && noseStyle.shape === 'blunt' && (
+          <rect x={0} y={y} width={bodyWidth} height={noseHeight} fill={noseStyle.color} stroke="#111" strokeWidth={2} rx={bodyWidth/3} />
+        )}
+        {/* Body */}
+        {body && (
+          <rect x={0} y={y+noseHeight} width={bodyWidth} height={bodyHeight} fill={bodyStyle.color} stroke="#888" strokeWidth={2} />
+        )}
+        {/* Fins */}
+        {fins && finsStyle.shape === 'standard' && (
+          <>
+            <polygon points={`0,${y+noseHeight+bodyHeight-8} -12,${y+noseHeight+bodyHeight+16} 0,${y+noseHeight+bodyHeight+8}`} fill={finsStyle.color} stroke="#444" strokeWidth={2} />
+            <polygon points={`${bodyWidth},${y+noseHeight+bodyHeight-8} ${bodyWidth+12},${y+noseHeight+bodyHeight+16} ${bodyWidth},${y+noseHeight+bodyHeight+8}`} fill={finsStyle.color} stroke="#444" strokeWidth={2} />
+          </>
+        )}
+        {fins && finsStyle.shape === 'large' && (
+          <>
+            <polygon points={`0,${y+noseHeight+bodyHeight-8} -18,${y+noseHeight+bodyHeight+28} 0,${y+noseHeight+bodyHeight+8}`} fill={finsStyle.color} stroke="#444" strokeWidth={2} />
+            <polygon points={`${bodyWidth},${y+noseHeight+bodyHeight-8} ${bodyWidth+18},${y+noseHeight+bodyHeight+28} ${bodyWidth},${y+noseHeight+bodyHeight+8}`} fill={finsStyle.color} stroke="#444" strokeWidth={2} />
+          </>
+        )}
+        {fins && finsStyle.shape === 'swept' && (
+          <>
+            <polygon points={`0,${y+noseHeight+bodyHeight-8} -10,${y+noseHeight+bodyHeight+24} 8,${y+noseHeight+bodyHeight+8}`} fill={finsStyle.color} stroke="#444" strokeWidth={2} />
+            <polygon points={`${bodyWidth},${y+noseHeight+bodyHeight-8} ${bodyWidth+10},${y+noseHeight+bodyHeight+24} ${bodyWidth-8},${y+noseHeight+bodyHeight+8}`} fill={finsStyle.color} stroke="#444" strokeWidth={2} />
+          </>
+        )}
+        {/* Engine */}
+        {engine && (
+          <rect x={bodyWidth/2 - 6} y={y+noseHeight+bodyHeight} width={12} height={engineHeight} fill={engineStyle.color} stroke="#444" strokeWidth={2} rx={2} />
+        )}
+      </svg>
+    );
+  };
+
   return (
     <div className="min-h-screen p-6 bg-background">
       <div className="max-w-7xl mx-auto">
