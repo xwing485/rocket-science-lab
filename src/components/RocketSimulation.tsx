@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import RocketAICoach from './RocketAICoach';
+import PerformanceStats from './rocket-builder/PerformanceStats';
 
 // Realistic 2D Rocket Simulation (Styled like screenshot, improved physics)
 export default function RocketSimulation2D() {
@@ -30,6 +32,25 @@ export default function RocketSimulation2D() {
   const rocketHeight = 80;
   const noseHeight = 20;
   const engineHeight = 16;
+
+  // Dummy rocket stats for now
+  const dummyRocket = {
+    nose: { name: 'Pointed Cone', mass: 10, drag: 0.4 },
+    body: { diameter: 24, length: 200, mass: 20 },
+    fins: { name: 'Standard Fins', mass: 15, drag: 0.2, stability: 2.0 },
+    engine: { name: 'A8-3 Engine', mass: 24, drag: 0.1, thrust: 2.5 },
+    totalMass: 500,
+    totalDrag: 1.2,
+    thrust: 100,
+    stability: 2.0,
+    thrustToWeightRatio: 100 / (0.5 * 9.81),
+  };
+  const dummyResults = {
+    maxAltitude: 120,
+    maxVelocity: 60,
+    flightTime: 5.2,
+    performanceRating: 'Good',
+  };
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -175,6 +196,16 @@ export default function RocketSimulation2D() {
             </div>
           </CardContent>
         </Card>
+      </div>
+      {/* Rocket Info and AI Coach */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+        <PerformanceStats
+          totalMass={dummyRocket.totalMass}
+          thrust={dummyRocket.thrust}
+          stability={dummyRocket.stability}
+          thrustToWeightRatio={dummyRocket.thrustToWeightRatio}
+        />
+        <RocketAICoach rocketDesign={dummyRocket} simulationResults={dummyResults} />
       </div>
     </div>
   );
