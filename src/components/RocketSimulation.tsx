@@ -4,34 +4,48 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import RocketAICoach from './RocketAICoach';
 import PerformanceStats from './rocket-builder/PerformanceStats';
 
-// Realistic 2D Rocket Simulation (Styled like screenshot, improved physics)
-export default function RocketSimulation2D() {
+interface RocketDesign {
+  nose: { name: string; mass: number; drag: number };
+  body: { diameter: number; length: number; mass: number };
+  fins: { name: string; mass: number; drag: number; stability?: number };
+  engine: { name: string; mass: number; drag: number; thrust?: number };
+  totalMass: number;
+  totalDrag: number;
+  thrust: number;
+  stability: number;
+  thrustToWeightRatio?: number;
+}
+
+interface SimulationResults {
+  maxAltitude: number;
+  maxVelocity: number;
+  flightTime: number;
+  performanceRating: string;
+}
+
+interface RocketSimulation2DProps {
+  rocketDesign: RocketDesign | null;
+}
+
+export default function RocketSimulation2D({ rocketDesign }: RocketSimulation2DProps) {
   const [isLaunching, setIsLaunching] = useState(false);
   const [flightTime, setFlightTime] = useState(0);
   const [rocketPosition, setRocketPosition] = useState({ x: 150, y: 260 });
   const [flightData, setFlightData] = useState<Array<{time: number, altitude: number, velocity: number}>>([]);
 
-  // Dummy rocket stats for now
-  const dummyRocket = {
-    nose: { name: 'Pointed Cone', mass: 10, drag: 0.4 },
-    body: { diameter: 24, length: 200, mass: 20 },
-    fins: { name: 'Standard Fins', mass: 15, drag: 0.2, stability: 2.0 },
-    engine: { name: 'A8-3 Engine', mass: 24, drag: 0.1, thrust: 2.5 },
-    totalMass: 500,
-    totalDrag: 1.2,
-    thrust: 100,
-    stability: 2.0,
-    thrustToWeightRatio: 100 / (0.5 * 9.81),
-  };
-  const dummyResults = {
-    maxAltitude: 120,
-    maxVelocity: 60,
-    flightTime: 5.2,
-    performanceRating: 'Good',
-  };
+  if (!rocketDesign) {
+    return (
+      <div className="max-w-3xl mx-auto p-6">
+        <h1 className="text-2xl font-bold mb-4">2D Rocket Simulation</h1>
+        <div className="text-center text-muted-foreground py-12">
+          Build a rocket or select a saved design to simulate its flight.
+        </div>
+      </div>
+    );
+  }
 
   // Use rocket parameters for simulation
-  const rocket = dummyRocket; // Replace with real rocket when connected
+  const rocket = rocketDesign;
   const mass = rocket.totalMass / 1000; // convert g to kg
   const thrust = rocket.thrust; // N
   const gravity = 9.81; // m/s²
@@ -109,6 +123,19 @@ export default function RocketSimulation2D() {
     setFlightData([]);
     setRocketPosition({ x: svgWidth / 2, y: padY - rocketHeight });
   };
+
+  // Calculate thrust-to-weight ratio for stats
+  const thrustToWeightRatio = rocket.thrust / (rocket.totalMass / 1000 * gravity);
+
+  // Prepare simulation results for AI coach
+  const maxAltitude = flightData.length > 0 ? Math.max(...flightData.map(d => d.altitude)) : 0;
+  const maxVelocity = flightData.length > 0 ? Math.max(...flightData.map(d => d.velocity)) : 0;
+  const simulationResults = flightData.length > 0 ? {
+    maxAltitude,
+    maxVelocity,
+    flightTime,
+    performanceRating: thrustToWeightRatio > 5 ? 'Excellent' : thrustToWeightRatio > 3 ? 'Good' : thrustToWeightRatio > 1.5 ? 'Fair' : 'Poor',
+  } : null;
 
   return (
     <div className="max-w-3xl mx-auto p-6">
@@ -212,12 +239,12 @@ export default function RocketSimulation2D() {
       {/* Rocket Info and AI Coach */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
         <PerformanceStats
-          totalMass={dummyRocket.totalMass}
-          thrust={dummyRocket.thrust}
-          stability={dummyRocket.stability}
-          thrustToWeightRatio={dummyRocket.thrustToWeightRatio}
+          totalMass={rocket.totalMass}
+          thrust={rocket.thrust}
+          stability={rocket.stability}
+          thrustToWeightRatio={thrustToWeightRatio}
         />
-        <RocketAICoach rocketDesign={dummyRocket} simulationResults={dummyResults} />
+        <RocketAICoach rocketDesign={rocket} simulationResults={simulationResults} />
       </div>
     </div>
   );
