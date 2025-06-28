@@ -304,13 +304,13 @@ const LaunchPad = () => {
 };
 
 const Ground = () => {
-  // Make the ground 2m x 2m to match real-world scale
-  const geometry = new THREE.PlaneGeometry(2, 2);
+  // Make the ground 4m x 4m and place it at y=0
+  const geometry = new THREE.PlaneGeometry(4, 4);
   return (
     <mesh
       geometry={geometry}
       rotation={[-Math.PI / 2, 0, 0]}
-      position={[0, -2, 0]}
+      position={[0, 0, 0]}
     >
       <meshLambertMaterial color="#22C55E" />
     </mesh>
@@ -393,7 +393,7 @@ const Rocket3DVisualization = ({ currentData, isSimulating, rocketDesign }: Rock
         <Ground />
         <Clouds />
 
-        <gridHelper args={[20, 20, '#666666', '#666666']} position={[0, -2, 0]} />
+        <gridHelper args={[20, 20, '#666666', '#666666']} position={[0, 0, 0]} />
 
         <OrbitControls
           enablePan={!isSimulating}
