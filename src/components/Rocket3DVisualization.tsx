@@ -211,7 +211,7 @@ const Rocket3D = ({ currentData, isSimulating, rocketDesign }: Rocket3DProps) =>
   let noseY = y + noseHeight / 2;
 
   return (
-    <group ref={rocketRef} scale={[15, 15, 15]}>
+    <group ref={rocketRef} scale={[1, 1, 1]}>
       {/* Engine */}
       {engine && (
         <CleanCylinder args={engine.args} position={[0, engineY, 0]}>
@@ -255,7 +255,7 @@ const Rocket3D = ({ currentData, isSimulating, rocketDesign }: Rocket3DProps) =>
         return fins;
       })()}
       {/* Engine Flame (unchanged) */}
-      <group ref={flameRef} position={[0, engine ? engineY - engineHeight / 2 - engine.args[2]/2 : 0, 0, 0]}>
+      <group ref={flameRef} position={[0, engine ? engineY - engineHeight / 2 - engine.args[2]/2 : 0, 0]}>
         <CleanCone args={[engine ? engine.args[0] : 0.01, 0.8, 8]} position={[0, 0, 0]}>
           <meshBasicMaterial color="#FFD700" transparent opacity={0.8} />
         </CleanCone>
@@ -304,7 +304,8 @@ const LaunchPad = () => {
 };
 
 const Ground = () => {
-  const geometry = new THREE.PlaneGeometry(100, 100);
+  // Make the ground 2m x 2m to match real-world scale
+  const geometry = new THREE.PlaneGeometry(2, 2);
   return (
     <mesh
       geometry={geometry}
