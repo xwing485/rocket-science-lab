@@ -1,4 +1,4 @@
-import { useState } from 'react';
+gimport { useState } from 'react';
 
 const partTypes = [
   {
