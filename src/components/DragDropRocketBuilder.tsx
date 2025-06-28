@@ -21,10 +21,6 @@ interface RocketPart {
   length?: number;
 }
 
-interface DroppedPart extends RocketPart {
-  position: number;
-}
-
 interface DragDropRocketBuilderProps {
   onSectionChange: (section: string) => void;
   onProgressUpdate: (key: string, value: boolean) => void;
@@ -33,8 +29,7 @@ interface DragDropRocketBuilderProps {
 
 const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpdate }: DragDropRocketBuilderProps) => {
   const [activeTab, setActiveTab] = useState<'nose' | 'body' | 'fins' | 'engine'>('nose');
-  const [draggedPart, setDraggedPart] = useState<RocketPart | null>(null);
-  const [droppedParts, setDroppedParts] = useState<{ [key: number]: RocketPart }>({});
+  const [selectedParts, setSelectedParts] = useState({ nose: null, body: null, fins: null, engine: null });
   const { saveDesign } = useRocketDesigns();
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [designName, setDesignName] = useState('');
@@ -63,53 +58,32 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
     ]
   };
 
-  const handleDragStart = (e: React.DragEvent, part: RocketPart) => {
-    setDraggedPart(part);
-    e.dataTransfer.effectAllowed = 'copy';
+  const handleSelectPart = (type, part) => {
+    setSelectedParts(prev => ({ ...prev, [type]: part }));
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
+  const handleRemovePart = (type) => {
+    setSelectedParts(prev => ({ ...prev, [type]: null }));
   };
 
-  const handleDrop = (e: React.DragEvent, position: number) => {
-    e.preventDefault();
-    if (draggedPart) {
-      setDroppedParts(prev => ({
-        ...prev,
-        [position]: { ...draggedPart, position }
-      }));
-      setDraggedPart(null);
-    }
-  };
-
-  const removePart = (position: number) => {
-    setDroppedParts(prev => {
-      const newParts = { ...prev };
-      delete newParts[position];
-      return newParts;
-    });
-  };
-
-  const totalMass = Object.values(droppedParts).reduce((sum, part) => sum + part.mass, 0);
-  const totalDrag = Object.values(droppedParts).reduce((sum, part) => sum + part.drag, 0);
-  const thrust = droppedParts[3]?.thrust || 0;
-  const stability = droppedParts[2]?.stability || 0;
+  const totalMass = Object.values(selectedParts).reduce((sum, part) => sum + part.mass, 0);
+  const totalDrag = Object.values(selectedParts).reduce((sum, part) => sum + part.drag, 0);
+  const thrust = selectedParts.engine?.thrust || 0;
+  const stability = selectedParts.fins?.stability || 0;
   const thrustToWeight = totalMass > 0 ? thrust / (totalMass / 1000 * 9.81) : 0;
 
-  const isComplete = Object.keys(droppedParts).length === 4;
+  const isComplete = Object.keys(selectedParts).length === 4;
 
   const handleSaveDesign = async () => {
-    const bodyPart = droppedParts[1] || { mass: 0, diameter: 24, length: 200 };
+    const bodyPart = selectedParts.body || { mass: 0, diameter: 24, length: 200 };
     const diameter = bodyPart.diameter || 24;
     const length = bodyPart.length || 200;
     const mass = bodyPart.mass || 0;
     const rocketDesign = {
-      nose: droppedParts[0] || null,
+      nose: selectedParts.nose || null,
       body: { diameter, length, mass },
-      fins: droppedParts[2] || null,
-      engine: droppedParts[3] || null,
+      fins: selectedParts.fins || null,
+      engine: selectedParts.engine || null,
       totalMass,
       totalDrag,
       thrust,
@@ -122,7 +96,7 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
   const handleSaveConfirm = async () => {
     if (!designName.trim()) return;
 
-    const bodyPart = droppedParts[1] || { mass: 0, diameter: 24, length: 200 };
+    const bodyPart = selectedParts.body || { mass: 0, diameter: 24, length: 200 };
     const diameter = bodyPart.diameter || 24;
     const length = bodyPart.length || 200;
     const mass = bodyPart.mass || 0;
@@ -130,10 +104,10 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
     const designData = {
       name: designName,
       description: designDescription,
-      nose_cone: droppedParts[0] || null,
+      nose_cone: selectedParts.nose || null,
       body_tube: { diameter, length, mass },
-      fins: droppedParts[2] || null,
-      engine: droppedParts[3] || null,
+      fins: selectedParts.fins || null,
+      engine: selectedParts.engine || null,
       performance_stats: {
         totalMass,
         totalDrag,
@@ -148,10 +122,10 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
       setDesignName('');
       setDesignDescription('');
       onRocketUpdate({
-        nose: droppedParts[0] || null,
+        nose: selectedParts.nose || null,
         body: { diameter, length, mass },
-        fins: droppedParts[2] || null,
-        engine: droppedParts[3] || null,
+        fins: selectedParts.fins || null,
+        engine: selectedParts.engine || null,
         totalMass,
         totalDrag,
         thrust,
@@ -194,10 +168,10 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
 
   // Live SVG preview of the current rocket
   const renderRocketPreview = () => {
-    const nose = droppedParts[0];
-    const body = droppedParts[1];
-    const fins = droppedParts[2];
-    const engine = droppedParts[3];
+    const nose = selectedParts.nose;
+    const body = selectedParts.body;
+    const fins = selectedParts.fins;
+    const engine = selectedParts.engine;
     const noseStyle = getPartStyles(nose, 'nose');
     const bodyStyle = getPartStyles(body, 'body');
     const finsStyle = getPartStyles(fins, 'fins');
@@ -257,7 +231,7 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold mb-2">Rocket Builder</h1>
-            <p className="text-muted-foreground">Design your own rocket by dragging and dropping components.</p>
+            <p className="text-muted-foreground">Design your own rocket by clicking parts in the palette below.</p>
           </div>
           <Button variant="outline" onClick={() => onSectionChange('home')}>
             Back to Mission Control
@@ -269,7 +243,7 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
             <Card>
               <CardHeader>
                 <CardTitle>Parts Palette</CardTitle>
-                <CardDescription>Drag parts to the assembly area</CardDescription>
+                <CardDescription>Click a part to add it to your rocket</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex border-b mb-4">
@@ -287,35 +261,20 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
                     </button>
                   ))}
                 </div>
-
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {parts[activeTab].map((part) => (
                     <div
                       key={part.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, part)}
-                      className="p-3 border rounded-lg cursor-grab hover:bg-accent/50 transition-colors"
+                      className={`flex items-center justify-between p-2 rounded cursor-pointer border ${selectedParts[activeTab]?.id === part.id ? 'border-primary bg-primary/10' : 'border-transparent hover:bg-accent/20'}`}
+                      onClick={() => handleSelectPart(activeTab, part)}
                     >
-                      <div className="flex items-center justify-between">
-                        <div>
-                        <h4 className="font-medium">{part.name}</h4>
-                      <div className="text-sm text-muted-foreground">
-                        Drag: {part.drag} | 
-                        {part.thrust && ` Thrust: ${part.thrust}N |`}
-                        {part.stability && ` Stability: ${part.stability}`}
-                          </div>
-                        </div>
-                        <div className="flex-shrink-0 ml-4 text-right">
-                          {part.image && (
-                            <img
-                              src={part.image}
-                              alt={part.name}
-                              className="w-24 h-24 object-contain rounded bg-muted mb-1"
-                            />
-                          )}
-                          <Badge variant="secondary">{part.mass}g</Badge>
+                      <div>
+                        <div className="font-semibold text-sm">{part.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          Drag: {part.drag} | {part.thrust ? `Thrust: ${part.thrust}N | ` : ''}{part.mass}g
                         </div>
                       </div>
+                      {selectedParts[activeTab]?.id === part.id && <span className="text-primary font-bold">✓</span>}
                     </div>
                   ))}
                 </div>
@@ -323,62 +282,28 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
             </Card>
           </div>
 
-          <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle>Rocket Assembly Area</CardTitle>
-                <CardDescription>
-                  Drop parts here to build your rocket
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-2">
-                <div className="h-[400px] bg-gradient-to-b from-blue-900 to-blue-300 rounded-lg border-2 border-dashed border-muted-foreground/30 relative">
-                  {/* Center build area */}
-                  <div
-                    className="flex-1 flex flex-col items-center justify-center bg-blue-900 relative"
-                    style={{ backgroundImage: 'repeating-linear-gradient(0deg, #3b82f6 0, #3b82f6 1px, transparent 1px, transparent 20px), repeating-linear-gradient(90deg, #3b82f6 0, #3b82f6 1px, transparent 1px, transparent 20px)' }}
-                    onDragOver={e => e.preventDefault()}
-                    onDrop={handleDrop}
-                  >
-                    {/* SVG Rocket Preview always visible */}
-                    <div className="py-4">
-                      {renderRocketPreview()}
-                    </div>
-                    {/* Part name boxes with remove buttons */}
-                    <div className="w-full max-w-xs mx-auto flex flex-col gap-3">
-                      {['nose', 'body', 'fins', 'engine'].map((type, idx) => (
-                        <div key={type} className="flex items-center justify-between bg-blue-800 bg-opacity-60 rounded-lg border-2 border-dashed border-blue-300 px-4 py-2 min-h-[40px]">
-                          <span className="text-white font-medium">
-                            {droppedParts[idx] ? droppedParts[idx].name : <span className="opacity-40">Drop {type} here</span>}
-                          </span>
-                          {droppedParts[idx] && (
-                            <button
-                              className="ml-2 text-red-400 hover:text-red-600 text-lg font-bold"
-                              onClick={() => removePart(idx)}
-                              aria-label={`Remove ${droppedParts[idx].name}`}
-                            >
-                              ×
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+          <div className="lg:col-span-1 flex flex-col items-center">
+            <div className="w-full max-w-xs mx-auto flex flex-col items-center">
+              <div className="py-4">{renderRocketPreview()}</div>
+              <div className="w-full flex flex-col gap-3">
+                {['nose', 'body', 'fins', 'engine'].map((type) => (
+                  <div key={type} className="flex items-center justify-between bg-blue-800 bg-opacity-60 rounded-lg border-2 border-dashed border-blue-300 px-4 py-2 min-h-[40px]">
+                    <span className="text-white font-medium">
+                      {selectedParts[type] ? selectedParts[type].name : <span className="opacity-40">Select {type}</span>}
+                    </span>
+                    {selectedParts[type] && (
+                      <button
+                        className="ml-2 text-red-400 hover:text-red-600 text-lg font-bold"
+                        onClick={() => handleRemovePart(type)}
+                        aria-label={`Remove ${selectedParts[type].name}`}
+                      >
+                        ×
+                      </button>
+                    )}
                   </div>
-                </div>
-
-                {!isComplete && (
-                  <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                    <div className="flex items-center">
-                      <div className="w-4 h-4 rounded-full bg-yellow-500 mr-2"></div>
-                      <span className="text-sm font-medium">Incomplete Rocket</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Add all required parts to complete your rocket design.
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div className="lg:col-span-1">
