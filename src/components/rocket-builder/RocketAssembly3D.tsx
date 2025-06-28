@@ -190,11 +190,10 @@ const Rocket3DAssembly = ({ droppedParts, onRemovePart }: { droppedParts: Droppe
 
   return (
     <group ref={rocketRef} scale={[40, 40, 40]}>
-      {/* Calculate Y positions for stacking */}
       {(() => {
-        // Get geometry for each part
+        // Get geometry for each part, or use defaults for body if only fins are present
         const nose = droppedParts[0] ? getNoseConeGeometry(droppedParts[0]) : null;
-        const body = droppedParts[1] ? getBodyTubeGeometry(droppedParts[1]) : null;
+        const body = droppedParts[1] ? getBodyTubeGeometry(droppedParts[1]) : (droppedParts[2] ? getBodyTubeGeometry({ name: 'Standard Tube' } as RocketPart) : null);
         const engine = droppedParts[3] ? getEngineGeometry(droppedParts[3]) : null;
         // Heights
         const noseHeight = nose ? nose.args[1] : 0;
@@ -210,7 +209,6 @@ const Rocket3DAssembly = ({ droppedParts, onRemovePart }: { droppedParts: Droppe
         y += bodyHeight;
         // Nose
         let noseY = y + noseHeight / 2;
-        // Render parts
         return <>
           {/* Engine - Position 3 */}
           {engine && (
@@ -222,7 +220,7 @@ const Rocket3DAssembly = ({ droppedParts, onRemovePart }: { droppedParts: Droppe
               <meshPhongMaterial color={engine.color} />
             </CleanCylinder>
           )}
-          {/* Body Tube - Position 1 */}
+          {/* Body Tube - Position 1 (or default if only fins) */}
           {body && (
             <CleanCylinder
               args={body.args}
