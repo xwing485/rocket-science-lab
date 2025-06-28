@@ -33,6 +33,13 @@ export default function RocketSimulation2D() {
   const noseHeight = 20;
   const engineHeight = 16;
 
+  // Camera follow logic
+  // The cameraY is the vertical offset to keep the rocket centered (but not below ground)
+  const maxVisibleAltitude = 120; // meters
+  const rocketAltitude = flightData.length > 0 ? flightData[flightData.length - 1].altitude : 0;
+  // Center rocket, but don't scroll below ground
+  const cameraY = Math.max(0, rocketAltitude * 2 - svgHeight / 2 + rocketHeight / 2);
+
   // Dummy rocket stats for now
   const dummyRocket = {
     nose: { name: 'Pointed Cone', mass: 10, drag: 0.4 },
@@ -58,7 +65,6 @@ export default function RocketSimulation2D() {
       let velocity = 0;
       let altitude = 0;
       let time = 0;
-      let powered = true;
       let running = true;
       let data: Array<{time: number, altitude: number, velocity: number}> = [];
       interval = setInterval(() => {
@@ -80,7 +86,8 @@ export default function RocketSimulation2D() {
           running = false;
           setIsLaunching(false);
         }
-        setRocketPosition({ x: svgWidth / 2, y: Math.max(padY - rocketHeight, padY - (altitude * 2)) });
+        // Y position: padY - (altitude * 2)
+        setRocketPosition({ x: svgWidth / 2, y: padY - (altitude * 2) - rocketHeight });
         data.push({ time, altitude, velocity });
         setFlightTime(time);
         setFlightData([...data]);
@@ -100,7 +107,7 @@ export default function RocketSimulation2D() {
     setIsLaunching(false);
     setFlightTime(0);
     setFlightData([]);
-    setRocketPosition({ x: svgWidth / 2, y: 260 });
+    setRocketPosition({ x: svgWidth / 2, y: padY - rocketHeight });
   };
 
   return (
@@ -113,7 +120,12 @@ export default function RocketSimulation2D() {
             <CardTitle>Launch</CardTitle>
           </CardHeader>
           <CardContent>
-            <svg width={svgWidth} height={svgHeight} style={{ background: '#b6d0e2', borderRadius: 12 }}>
+            <svg
+              width={svgWidth}
+              height={svgHeight}
+              style={{ background: '#b6d0e2', borderRadius: 12 }}
+              viewBox={`0 ${cameraY} ${svgWidth} ${svgHeight}`}
+            >
               {/* Ground */}
               <rect x={0} y={groundY} width={svgWidth} height={svgHeight - groundY} fill="#3b3b3b" />
               {/* Launch Pad */}
