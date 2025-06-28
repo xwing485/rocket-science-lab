@@ -33,12 +33,8 @@ export default function RocketSimulation2D() {
   const noseHeight = 20;
   const engineHeight = 16;
 
-  // Camera follow logic
-  // The cameraY is the vertical offset to keep the rocket centered (but not below ground)
-  const maxVisibleAltitude = 120; // meters
-  const rocketAltitude = flightData.length > 0 ? flightData[flightData.length - 1].altitude : 0;
-  // Center rocket, but don't scroll below ground
-  const cameraY = Math.max(0, rocketAltitude * 2 - svgHeight / 2 + rocketHeight / 2);
+  // Altitude-to-pixel scale
+  const altitudeScale = 3; // pixels per meter
 
   // Dummy rocket stats for now
   const dummyRocket = {
@@ -86,8 +82,8 @@ export default function RocketSimulation2D() {
           running = false;
           setIsLaunching(false);
         }
-        // Y position: padY - (altitude * 2)
-        setRocketPosition({ x: svgWidth / 2, y: padY - (altitude * 2) - rocketHeight });
+        // Y position: padY - rocketHeight - altitude * scale
+        setRocketPosition({ x: svgWidth / 2, y: padY - rocketHeight - altitude * altitudeScale });
         data.push({ time, altitude, velocity });
         setFlightTime(time);
         setFlightData([...data]);
@@ -124,7 +120,6 @@ export default function RocketSimulation2D() {
               width={svgWidth}
               height={svgHeight}
               style={{ background: '#b6d0e2', borderRadius: 12 }}
-              viewBox={`0 ${cameraY} ${svgWidth} ${svgHeight}`}
             >
               {/* Ground */}
               <rect x={0} y={groundY} width={svgWidth} height={svgHeight - groundY} fill="#3b3b3b" />
