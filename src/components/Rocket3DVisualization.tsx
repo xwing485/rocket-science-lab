@@ -268,37 +268,35 @@ const Rocket3D = ({ currentData, isSimulating, rocketDesign }: Rocket3DProps) =>
 };
 
 const LaunchPad = () => {
+  // Realistic pad: 0.3m diameter, 0.03m thick
   return (
-    <group position={[0, -1.8, 0]}>
-      {/* Main platform - reduced from diameter 4 to 2.4 */}
-      <CleanCylinder args={[1.2, 1.2, 0.15, 16]} position={[0, 0, 0]}>
+    <group position={[0, 0, 0]}>
+      {/* Main platform - 0.15m radius, 0.03m thick */}
+      <CleanCylinder args={[0.15, 0.15, 0.03, 32]} position={[0, 0.015, 0]}>
         <meshPhongMaterial color="#CCCCCC" />
       </CleanCylinder>
-      
-      {/* Support legs - reduced spacing and size */}
-      <CleanBox args={[0.1, 0.6, 0.1]} position={[0.9, -0.4, 0.9]}>
+      {/* Support legs - 0.02m thick, 0.12m long */}
+      <CleanBox args={[0.02, 0.12, 0.02]} position={[0.12, -0.045, 0.12]}>
         <meshPhongMaterial color="#999999" />
       </CleanBox>
-      <CleanBox args={[0.1, 0.6, 0.1]} position={[-0.9, -0.4, 0.9]}>
+      <CleanBox args={[0.02, 0.12, 0.02]} position={[-0.12, -0.045, 0.12]}>
         <meshPhongMaterial color="#999999" />
       </CleanBox>
-      <CleanBox args={[0.1, 0.6, 0.1]} position={[0.9, -0.4, -0.9]}>
+      <CleanBox args={[0.02, 0.12, 0.02]} position={[0.12, -0.045, -0.12]}>
         <meshPhongMaterial color="#999999" />
       </CleanBox>
-      <CleanBox args={[0.1, 0.6, 0.1]} position={[-0.9, -0.4, -0.9]}>
+      <CleanBox args={[0.02, 0.12, 0.02]} position={[-0.12, -0.045, -0.12]}>
         <meshPhongMaterial color="#999999" />
       </CleanBox>
-      
-      {/* Central support tower - slightly smaller */}
-      <CleanCylinder args={[0.08, 0.08, 1.2, 8]} position={[0, 0.55, 0]}>
+      {/* Central support tower - 0.01m radius, 0.25m tall */}
+      <CleanCylinder args={[0.01, 0.01, 0.25, 8]} position={[0, 0.14, 0]}>
         <meshPhongMaterial color="#FF0000" />
       </CleanCylinder>
-      
-      {/* Platform details - adjusted positions */}
-      <CleanCylinder args={[0.04, 0.04, 0.2, 8]} position={[0.5, 0.18, 0]}>
+      {/* Platform details - small */}
+      <CleanCylinder args={[0.005, 0.005, 0.03, 8]} position={[0.06, 0.03, 0]}>
         <meshPhongMaterial color="#FFFF00" />
       </CleanCylinder>
-      <CleanCylinder args={[0.04, 0.04, 0.2, 8]} position={[-0.5, 0.18, 0]}>
+      <CleanCylinder args={[0.005, 0.005, 0.03, 8]} position={[-0.06, 0.03, 0]}>
         <meshPhongMaterial color="#FFFF00" />
       </CleanCylinder>
     </group>
