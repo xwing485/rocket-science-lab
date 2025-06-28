@@ -11,31 +11,6 @@ export default function RocketSimulation2D() {
   const [rocketPosition, setRocketPosition] = useState({ x: 150, y: 260 });
   const [flightData, setFlightData] = useState<Array<{time: number, altitude: number, velocity: number}>>([]);
 
-  // Physics
-  const thrust = 100; // N
-  const mass = 0.5; // kg
-  const gravity = 9.81; // m/s²
-  const dragCoeff = 0.5; // more realistic drag
-  const crossSectionalArea = 0.01; // m²
-  const airDensity = 1.225; // kg/m³
-  const timeStep = 0.01; // seconds
-  const burnTime = 2.0; // seconds
-
-  // SVG dimensions
-  const svgWidth = 300;
-  const svgHeight = 300;
-  const groundY = svgHeight - 30;
-  const padY = groundY - 20;
-
-  // Rocket dimensions
-  const rocketWidth = 24;
-  const rocketHeight = 80;
-  const noseHeight = 20;
-  const engineHeight = 16;
-
-  // Altitude-to-pixel scale
-  const altitudeScale = 3; // pixels per meter
-
   // Dummy rocket stats for now
   const dummyRocket = {
     nose: { name: 'Pointed Cone', mass: 10, drag: 0.4 },
@@ -54,6 +29,35 @@ export default function RocketSimulation2D() {
     flightTime: 5.2,
     performanceRating: 'Good',
   };
+
+  // Use rocket parameters for simulation
+  const rocket = dummyRocket; // Replace with real rocket when connected
+  const mass = rocket.totalMass / 1000; // convert g to kg
+  const thrust = rocket.thrust; // N
+  const gravity = 9.81; // m/s²
+  const dragCoeff = rocket.totalDrag || 0.5;
+  const crossSectionalArea = Math.PI * Math.pow((rocket.body.diameter / 1000) / 2, 2); // m²
+  const airDensity = 1.225; // kg/m³
+  const timeStep = 0.01; // seconds
+  const burnTime = rocket.engine.thrust ? 2.0 : 0; // seconds (placeholder, can be improved)
+
+  // SVG dimensions
+  const svgWidth = 300;
+  const svgHeight = 300;
+  const groundY = svgHeight - 30;
+  const padY = groundY - 20;
+
+  // Rocket dimensions
+  const rocketWidth = 24;
+  const rocketHeight = 80;
+  const noseHeight = 20;
+  const engineHeight = 16;
+
+  // Camera follow logic
+  const altitudeScale = 3; // pixels per meter
+  const rocketAltitude = flightData.length > 0 ? flightData[flightData.length - 1].altitude : 0;
+  // Center rocket, but don't scroll below ground
+  const cameraY = Math.max(0, (padY - rocketHeight - rocketAltitude * altitudeScale) - svgHeight / 2 + rocketHeight / 2);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -78,11 +82,11 @@ export default function RocketSimulation2D() {
           running = false;
           setIsLaunching(false);
         }
-        if (velocity <= 0 && time > burnTime) {
+        // Stop at apogee (after burnout, velocity < 0)
+        if (velocity < 0 && time > burnTime) {
           running = false;
           setIsLaunching(false);
         }
-        // Y position: padY - rocketHeight - altitude * scale
         setRocketPosition({ x: svgWidth / 2, y: padY - rocketHeight - altitude * altitudeScale });
         data.push({ time, altitude, velocity });
         setFlightTime(time);
@@ -90,7 +94,7 @@ export default function RocketSimulation2D() {
       }, 10);
     }
     return () => clearInterval(interval);
-  }, [isLaunching]);
+  }, [isLaunching, mass, thrust, dragCoeff, crossSectionalArea, burnTime]);
 
   const handleLaunch = () => {
     setIsLaunching(true);
@@ -120,6 +124,7 @@ export default function RocketSimulation2D() {
               width={svgWidth}
               height={svgHeight}
               style={{ background: '#b6d0e2', borderRadius: 12 }}
+              viewBox={`0 ${cameraY} ${svgWidth} ${svgHeight}`}
             >
               {/* Ground */}
               <rect x={0} y={groundY} width={svgWidth} height={svgHeight - groundY} fill="#3b3b3b" />
