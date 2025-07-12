@@ -25,9 +25,17 @@ interface SimulationResults {
 
 interface RocketSimulation2DProps {
   rocketDesign: RocketDesign | null;
+  onSectionChange: (section: string) => void;
+  onProgressUpdate: (key: string, value: boolean) => void;
+  onSimulationUpdate: (results: SimulationResults) => void;
 }
 
-export default function RocketSimulation2D({ rocketDesign }: RocketSimulation2DProps) {
+export default function RocketSimulation2D({ 
+  rocketDesign, 
+  onSectionChange, 
+  onProgressUpdate, 
+  onSimulationUpdate 
+}: RocketSimulation2DProps) {
   const [isLaunching, setIsLaunching] = useState(false);
   const [flightTime, setFlightTime] = useState(0);
   const [rocketPosition, setRocketPosition] = useState({ x: 150, y: 260 });
@@ -143,6 +151,13 @@ export default function RocketSimulation2D({ rocketDesign }: RocketSimulation2DP
         if (velocity < 0 && time > burnTime) {
           running = false;
           setIsLaunching(false);
+          const results = {
+            maxAltitude: Math.max(...data.map(d => d.altitude)),
+            maxVelocity: Math.max(...data.map(d => d.velocity)),
+            flightTime: time,
+            performanceRating: thrustToWeightRatio > 5 ? 'Excellent' : thrustToWeightRatio > 3 ? 'Good' : thrustToWeightRatio > 1.5 ? 'Fair' : 'Poor',
+          };
+          onSimulationUpdate(results);
         }
         setRocketPosition({ x: svgWidth / 2, y: padY - rocketHeight - altitude * altitudeScale });
         data.push({ time, altitude, velocity });
@@ -158,6 +173,7 @@ export default function RocketSimulation2D({ rocketDesign }: RocketSimulation2DP
     setFlightTime(0);
     setFlightData([]);
     setRocketPosition({ x: svgWidth / 2, y: padY - rocketHeight });
+    onProgressUpdate('simulationRun', true);
   };
 
   const handleReset = () => {
