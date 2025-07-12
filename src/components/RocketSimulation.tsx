@@ -149,16 +149,19 @@ export default function RocketSimulation2D({
       engineRef.current = null;
       rocketBodyRef.current = null;
     }
-    // Create engine and world
+    // Create engine and world with scaled physics
     const engine = Matter.Engine.create();
-    engine.gravity.y = gravity / 9.81; // scale gravity to m/s²
+    // Scale gravity way down for Matter.js - it uses different units
+    engine.gravity.y = 0.001; // Much smaller gravity for realistic model rocket physics
+    engine.timing.timeScale = 1; // Normal time scale
     engineRef.current = engine;
-    // Create rocket body (vertical, 1D motion)
+    
+    // Create rocket body with realistic mass scaling
     const rocketBody = Matter.Bodies.rectangle(svgWidth / 2, padY - rocketHeight, bodyWidth, rocketHeight, {
-      mass: mass,
-      frictionAir: 0, // We'll handle drag manually
+      mass: mass * 0.1, // Scale mass down for Matter.js physics
+      frictionAir: 0.02, // Add some air friction
       friction: 0,
-      restitution: 0,
+      restitution: 0.1,
       isStatic: false,
     });
     rocketBodyRef.current = rocketBody;
@@ -175,32 +178,18 @@ export default function RocketSimulation2D({
       
       // Apply thrust (upwards, only during burn)
       if (time < burnTime) {
-        // Matter.js expects force directly in Newtons
-        // Scale the force down significantly for realistic model rocket behavior
-        const thrustForce = scaledThrust * 0.01; // Further scale down for more realistic results
+        // Apply small, realistic thrust for Matter.js
+        const thrustForce = scaledThrust * 0.0001; // Very small force for Matter.js
         Matter.Body.applyForce(rocketBody, rocketBody.position, { x: 0, y: -thrustForce });
       }
       
-      // Calculate drag (opposes velocity)
-      const velocityY = rocketBody.velocity.y;
-      const speed = Math.abs(velocityY);
-      
-      // Realistic drag for model rockets - much higher than full-scale
-      const dragForce = 0.5 * dragCoeff * airDensity * crossSectionalArea * speed * speed;
-      const dragDirection = velocityY > 0 ? 1 : -1;
-      
-      // Apply drag force (scale it up to be more significant)
-      if (speed > 0.1) {
-        Matter.Body.applyForce(rocketBody, rocketBody.position, { x: 0, y: dragForce * dragDirection * 0.1 });
-      }
-      
-      // Step the engine with smaller time steps for stability
+      // Step the engine
       Matter.Engine.update(engine, dt * 1000);
       // Update time and data
       time += dt;
       // Altitude: how high above the pad (in meters)
       let altitude = Math.max(0, (padY - rocketHeight - rocketBody.position.y) / altitudeScale);
-      let velocity = -velocityY;
+      let velocity = -rocketBody.velocity.y; // Get velocity from Matter.js body
       // Clamp/check for NaN/Infinity
       if (!isFinite(altitude) || isNaN(altitude)) altitude = 0;
       if (!isFinite(velocity) || isNaN(velocity)) velocity = 0;
