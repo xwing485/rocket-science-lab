@@ -158,35 +158,38 @@ export default function RocketSimulation2D({
     let data: Array<{time: number, altitude: number, velocity: number}> = [];
     let maxAltitude = 0;
     let maxVelocity = 0;
-    // Custom runner to control time step
-    const runner = Matter.Runner.create();
-    runnerRef.current = runner;
+    const dt = 1 / 60; // 60 FPS
     // Thrust and drag application
     const update = () => {
       if (!isLaunching) return;
       // Apply thrust (upwards, only during burn)
       if (time < burnTime) {
         // F = ma, so force = thrust (N)
-        const force = thrust / (60 * mass); // scale for 60fps, adjust as needed
+        // Matter.js expects force in N, but per update: F * dt / mass
+        const force = thrust * dt; // N * s
         Matter.Body.applyForce(rocketBody, rocketBody.position, { x: 0, y: -force });
       }
       // Calculate drag (opposes velocity)
       const velocityY = rocketBody.velocity.y;
       const dragMag = 0.5 * dragCoeff * airDensity * crossSectionalArea * velocityY * velocityY;
       const drag = dragMag * (velocityY > 0 ? 1 : -1);
-      Matter.Body.applyForce(rocketBody, rocketBody.position, { x: 0, y: -drag / mass });
+      Matter.Body.applyForce(rocketBody, rocketBody.position, { x: 0, y: -drag * dt });
       // Step the engine
-      Matter.Engine.update(engine, 1000 / 60); // 60fps
+      Matter.Engine.update(engine, dt * 1000); // ms
       // Update time and data
-      time += 1 / 60;
+      time += dt;
       // Altitude: how high above the pad (in meters)
-      const altitude = Math.max(0, (padY - rocketHeight - rocketBody.position.y) / altitudeScale);
-      data.push({ time, altitude, velocity: -velocityY });
+      let altitude = Math.max(0, (padY - rocketHeight - rocketBody.position.y) / altitudeScale);
+      let velocity = -velocityY;
+      // Clamp/check for NaN/Infinity
+      if (!isFinite(altitude) || isNaN(altitude)) altitude = 0;
+      if (!isFinite(velocity) || isNaN(velocity)) velocity = 0;
+      data.push({ time, altitude, velocity });
       setFlightTime(time);
       setFlightData([...data]);
       setRocketPosition({ x: svgWidth / 2, y: rocketBody.position.y });
       maxAltitude = Math.max(maxAltitude, altitude);
-      maxVelocity = Math.max(maxVelocity, Math.abs(velocityY));
+      maxVelocity = Math.max(maxVelocity, Math.abs(velocity));
       // Stop if rocket hits ground or starts descending after burnout
       if (altitude <= 0 && time > 0.1) {
         setIsLaunching(false);
@@ -207,7 +210,7 @@ export default function RocketSimulation2D({
     // Cleanup
     return () => {
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-      Matter.Runner.stop(runner);
+      Matter.Runner.stop(runnerRef.current!);
       Matter.Engine.clear(engine);
       engineRef.current = null;
       runnerRef.current = null;
