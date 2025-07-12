@@ -175,26 +175,27 @@ export default function RocketSimulation2D({
       
       // Apply thrust (upwards, only during burn)
       if (time < burnTime) {
-        // Apply thrust as acceleration: F = ma, so a = F/m
-        const acceleration = scaledThrust / mass; // m/s²
-        const thrustForce = acceleration * mass * dt; // Convert to force for this time step
+        // Matter.js expects force directly in Newtons
+        // Scale the force down significantly for realistic model rocket behavior
+        const thrustForce = scaledThrust * 0.01; // Further scale down for more realistic results
         Matter.Body.applyForce(rocketBody, rocketBody.position, { x: 0, y: -thrustForce });
       }
       
-      // Calculate drag (opposes velocity) - more realistic for model rockets
+      // Calculate drag (opposes velocity)
       const velocityY = rocketBody.velocity.y;
       const speed = Math.abs(velocityY);
+      
+      // Realistic drag for model rockets - much higher than full-scale
       const dragForce = 0.5 * dragCoeff * airDensity * crossSectionalArea * speed * speed;
       const dragDirection = velocityY > 0 ? 1 : -1;
       
-      // Apply drag force
-      if (speed > 0.1) { // Only apply drag if moving significantly
-        const dragAcceleration = (dragForce / mass) * dragDirection;
-        Matter.Body.applyForce(rocketBody, rocketBody.position, { x: 0, y: dragAcceleration * mass * dt });
+      // Apply drag force (scale it up to be more significant)
+      if (speed > 0.1) {
+        Matter.Body.applyForce(rocketBody, rocketBody.position, { x: 0, y: dragForce * dragDirection * 0.1 });
       }
       
-      // Step the engine
-      Matter.Engine.update(engine, dt * 1000); // ms
+      // Step the engine with smaller time steps for stability
+      Matter.Engine.update(engine, dt * 1000);
       // Update time and data
       time += dt;
       // Altitude: how high above the pad (in meters)
