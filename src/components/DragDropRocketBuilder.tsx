@@ -2,6 +2,10 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Save, Play } from 'lucide-react';
 import { useRocketDesigns } from '@/hooks/useRocketDesigns';
 
@@ -378,6 +382,47 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
           </div>
         </div>
       </div>
+
+      {/* Save Design Dialog */}
+      <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save Rocket Design</DialogTitle>
+            <DialogDescription>
+              Give your rocket design a name and description to save it for later use.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="design-name">Design Name</Label>
+              <Input
+                id="design-name"
+                value={designName}
+                onChange={(e) => setDesignName(e.target.value)}
+                placeholder="Enter design name..."
+              />
+            </div>
+            <div>
+              <Label htmlFor="design-description">Description (Optional)</Label>
+              <Textarea
+                id="design-description"
+                value={designDescription}
+                onChange={(e) => setDesignDescription(e.target.value)}
+                placeholder="Enter design description..."
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSaveDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveConfirm} disabled={!designName.trim()}>
+              Save Design
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
