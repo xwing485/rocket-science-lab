@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import RocketAICoach from './RocketAICoach';
 import PerformanceStats from './rocket-builder/PerformanceStats';
+import Matter from 'matter-js';
 
 interface RocketDesign {
   nose: { name: string; mass: number; drag: number };
@@ -40,6 +41,10 @@ export default function RocketSimulation2D({
   const [flightTime, setFlightTime] = useState(0);
   const [rocketPosition, setRocketPosition] = useState({ x: 150, y: 260 });
   const [flightData, setFlightData] = useState<Array<{time: number, altitude: number, velocity: number}>>([]);
+  const engineRef = useRef<Matter.Engine | null>(null);
+  const runnerRef = useRef<Matter.Runner | null>(null);
+  const rocketBodyRef = useRef<Matter.Body | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
   if (!rocketDesign) {
     return (
@@ -60,7 +65,6 @@ export default function RocketSimulation2D({
   const dragCoeff = rocket.totalDrag || 0.5;
   const crossSectionalArea = Math.PI * Math.pow((rocket.body.diameter / 1000) / 2, 2); // m²
   const airDensity = 1.225; // kg/m³
-  const timeStep = 0.01; // seconds
   const burnTime = rocket.engine.thrust ? 2.0 : 0; // seconds (placeholder, can be improved)
 
   // SVG dimensions
@@ -124,49 +128,90 @@ export default function RocketSimulation2D({
     engineColor = '#7c3aed';
   }
 
+  // --- Matter.js Physics Simulation ---
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isLaunching) {
-      let velocity = 0;
-      let altitude = 0;
-      let time = 0;
-      let running = true;
-      let data: Array<{time: number, altitude: number, velocity: number}> = [];
-      interval = setInterval(() => {
-        if (!running) return;
-        let currentThrust = (time < burnTime) ? thrust : 0;
-        let drag = 0.5 * dragCoeff * airDensity * crossSectionalArea * velocity * velocity * (velocity > 0 ? 1 : -1);
-        let netForce = currentThrust - (mass * gravity) - drag;
-        let acceleration = netForce / mass;
-        velocity += acceleration * timeStep;
-        altitude += velocity * timeStep;
-        time += timeStep;
-        if (altitude < 0) {
-          altitude = 0;
-          velocity = 0;
-          running = false;
-          setIsLaunching(false);
-        }
-        // Stop at apogee (after burnout, velocity < 0)
-        if (velocity < 0 && time > burnTime) {
-          running = false;
-          setIsLaunching(false);
-          const results = {
-            maxAltitude: Math.max(...data.map(d => d.altitude)),
-            maxVelocity: Math.max(...data.map(d => d.velocity)),
-            flightTime: time,
-            performanceRating: thrustToWeightRatio > 5 ? 'Excellent' : thrustToWeightRatio > 3 ? 'Good' : thrustToWeightRatio > 1.5 ? 'Fair' : 'Poor',
-          };
-          onSimulationUpdate(results);
-        }
-        setRocketPosition({ x: svgWidth / 2, y: padY - rocketHeight - altitude * altitudeScale });
-        data.push({ time, altitude, velocity });
-        setFlightTime(time);
-        setFlightData([...data]);
-      }, 10);
+    if (!isLaunching) return;
+    // Clean up any previous engine
+    if (engineRef.current) {
+      Matter.Runner.stop(runnerRef.current!);
+      Matter.Engine.clear(engineRef.current);
+      engineRef.current = null;
+      runnerRef.current = null;
+      rocketBodyRef.current = null;
     }
-    return () => clearInterval(interval);
-  }, [isLaunching, mass, thrust, dragCoeff, crossSectionalArea, burnTime]);
+    // Create engine and world
+    const engine = Matter.Engine.create();
+    engine.gravity.y = gravity / 9.81; // scale gravity to m/s²
+    engineRef.current = engine;
+    // Create rocket body (vertical, 1D motion)
+    const rocketBody = Matter.Bodies.rectangle(svgWidth / 2, padY - rocketHeight, bodyWidth, rocketHeight, {
+      mass: mass,
+      frictionAir: 0, // We'll handle drag manually
+      friction: 0,
+      restitution: 0,
+      isStatic: false,
+    });
+    rocketBodyRef.current = rocketBody;
+    Matter.World.add(engine.world, [rocketBody]);
+    // State for simulation
+    let time = 0;
+    let data: Array<{time: number, altitude: number, velocity: number}> = [];
+    let maxAltitude = 0;
+    let maxVelocity = 0;
+    // Custom runner to control time step
+    const runner = Matter.Runner.create();
+    runnerRef.current = runner;
+    // Thrust and drag application
+    const update = () => {
+      if (!isLaunching) return;
+      // Apply thrust (upwards, only during burn)
+      if (time < burnTime) {
+        const force = thrust / mass; // acceleration (m/s²)
+        Matter.Body.applyForce(rocketBody, rocketBody.position, { x: 0, y: -force * rocketBody.mass * engine.timing.delta / 1000 });
+      }
+      // Calculate drag (opposes velocity)
+      const velocityY = rocketBody.velocity.y;
+      const dragMag = 0.5 * dragCoeff * airDensity * crossSectionalArea * velocityY * velocityY;
+      const drag = dragMag * (velocityY > 0 ? 1 : -1);
+      Matter.Body.applyForce(rocketBody, rocketBody.position, { x: 0, y: -drag / mass });
+      // Update time and data
+      time += engine.timing.delta / 1000;
+      const altitude = Math.max(0, padY - rocketHeight - rocketBody.position.y) / altitudeScale;
+      data.push({ time, altitude, velocity: -velocityY });
+      setFlightTime(time);
+      setFlightData([...data]);
+      setRocketPosition({ x: svgWidth / 2, y: rocketBody.position.y });
+      maxAltitude = Math.max(maxAltitude, altitude);
+      maxVelocity = Math.max(maxVelocity, Math.abs(velocityY));
+      // Stop if rocket hits ground or starts descending after burnout
+      if (altitude <= 0 && time > 0.1) {
+        setIsLaunching(false);
+        onProgressUpdate('simulationRun', false);
+        const results = {
+          maxAltitude,
+          maxVelocity,
+          flightTime: time,
+          performanceRating: thrustToWeightRatio > 5 ? 'Excellent' : thrustToWeightRatio > 3 ? 'Good' : thrustToWeightRatio > 1.5 ? 'Fair' : 'Poor',
+        };
+        onSimulationUpdate(results);
+        return;
+      }
+      animationFrameRef.current = requestAnimationFrame(update);
+    };
+    // Start simulation
+    Matter.Runner.run(runner, engine);
+    animationFrameRef.current = requestAnimationFrame(update);
+    // Cleanup
+    return () => {
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      Matter.Runner.stop(runner);
+      Matter.Engine.clear(engine);
+      engineRef.current = null;
+      runnerRef.current = null;
+      rocketBodyRef.current = null;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLaunching]);
 
   const handleLaunch = () => {
     setIsLaunching(true);
