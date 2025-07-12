@@ -133,10 +133,12 @@ export default function RocketSimulation2D({
     if (!isLaunching) return;
     // Clean up any previous engine
     if (engineRef.current) {
-      Matter.Runner.stop(runnerRef.current!);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
       Matter.Engine.clear(engineRef.current);
       engineRef.current = null;
-      runnerRef.current = null;
       rocketBodyRef.current = null;
     }
     // Create engine and world
@@ -209,11 +211,14 @@ export default function RocketSimulation2D({
     animationFrameRef.current = requestAnimationFrame(update);
     // Cleanup
     return () => {
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-      Matter.Runner.stop(runnerRef.current!);
-      Matter.Engine.clear(engine);
-      engineRef.current = null;
-      runnerRef.current = null;
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      if (engineRef.current) {
+        Matter.Engine.clear(engineRef.current);
+        engineRef.current = null;
+      }
       rocketBodyRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
