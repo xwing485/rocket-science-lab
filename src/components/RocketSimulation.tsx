@@ -166,17 +166,21 @@ export default function RocketSimulation2D({
       if (!isLaunching) return;
       // Apply thrust (upwards, only during burn)
       if (time < burnTime) {
-        const force = thrust / mass; // acceleration (m/s²)
-        Matter.Body.applyForce(rocketBody, rocketBody.position, { x: 0, y: -force * rocketBody.mass * engine.timing.delta / 1000 });
+        // F = ma, so force = thrust (N)
+        const force = thrust / (60 * mass); // scale for 60fps, adjust as needed
+        Matter.Body.applyForce(rocketBody, rocketBody.position, { x: 0, y: -force });
       }
       // Calculate drag (opposes velocity)
       const velocityY = rocketBody.velocity.y;
       const dragMag = 0.5 * dragCoeff * airDensity * crossSectionalArea * velocityY * velocityY;
       const drag = dragMag * (velocityY > 0 ? 1 : -1);
       Matter.Body.applyForce(rocketBody, rocketBody.position, { x: 0, y: -drag / mass });
+      // Step the engine
+      Matter.Engine.update(engine, 1000 / 60); // 60fps
       // Update time and data
-      time += engine.timing.delta / 1000;
-      const altitude = Math.max(0, padY - rocketHeight - rocketBody.position.y) / altitudeScale;
+      time += 1 / 60;
+      // Altitude: how high above the pad (in meters)
+      const altitude = Math.max(0, (padY - rocketHeight - rocketBody.position.y) / altitudeScale);
       data.push({ time, altitude, velocity: -velocityY });
       setFlightTime(time);
       setFlightData([...data]);
@@ -199,7 +203,6 @@ export default function RocketSimulation2D({
       animationFrameRef.current = requestAnimationFrame(update);
     };
     // Start simulation
-    Matter.Runner.run(runner, engine);
     animationFrameRef.current = requestAnimationFrame(update);
     // Cleanup
     return () => {
