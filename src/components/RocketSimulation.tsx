@@ -88,7 +88,8 @@ export default function RocketSimulation2D({
   const engineHeight = 16;
 
   // Camera follow logic
-  const altitudeScale = 3; // pixels per meter
+  // Adjust the scale so that 1 meter = 30 pixels (typical for model rockets)
+  const altitudeScale = 30; // pixels per meter
   const rocketAltitude = flightData.length > 0 ? flightData[flightData.length - 1].altitude : 0;
   // Center rocket, but don't scroll below ground
   const cameraY = Math.max(0, (padY - rocketHeight - rocketAltitude * altitudeScale) - svgHeight / 2 + rocketHeight / 2);
@@ -141,27 +142,23 @@ export default function RocketSimulation2D({
     if (!isLaunching) return;
     // Clean up any previous engine
     if (engineRef.current) {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
+      Matter.Runner.stop(runnerRef.current!);
       Matter.Engine.clear(engineRef.current);
       engineRef.current = null;
+      runnerRef.current = null;
       rocketBodyRef.current = null;
     }
-    // Create engine and world with scaled physics
+    // Create engine and world
     const engine = Matter.Engine.create();
-    // Scale gravity way down for Matter.js - it uses different units
-    engine.gravity.y = 0.001; // Much smaller gravity for realistic model rocket physics
-    engine.timing.timeScale = 1; // Normal time scale
+    engine.gravity.y = gravity / 9.81; // scale gravity to m/s²
     engineRef.current = engine;
-    
-    // Create rocket body with realistic mass scaling
+    // Create rocket body (vertical, 1D motion)
+    // Start the rocket at ground level (padY - rocketHeight)
     const rocketBody = Matter.Bodies.rectangle(svgWidth / 2, padY - rocketHeight, bodyWidth, rocketHeight, {
-      mass: mass * 0.1, // Scale mass down for Matter.js physics
-      frictionAir: 0.02, // Add some air friction
+      mass: mass,
+      frictionAir: 0, // We'll handle drag manually
       friction: 0,
-      restitution: 0.1,
+      restitution: 0,
       isStatic: false,
     });
     rocketBodyRef.current = rocketBody;
@@ -175,21 +172,26 @@ export default function RocketSimulation2D({
     // Thrust and drag application
     const update = () => {
       if (!isLaunching) return;
-      
       // Apply thrust (upwards, only during burn)
       if (time < burnTime) {
-        // Apply small, realistic thrust for Matter.js
-        const thrustForce = scaledThrust * 0.0001; // Very small force for Matter.js
-        Matter.Body.applyForce(rocketBody, rocketBody.position, { x: 0, y: -thrustForce });
+        // F = ma, so force = thrust (N)
+        // Matter.js expects force in N, but per update: F * dt / mass
+        const force = thrust * dt; // N * s
+        Matter.Body.applyForce(rocketBody, rocketBody.position, { x: 0, y: -force });
       }
-      
+      // Calculate drag (opposes velocity)
+      const velocityY = rocketBody.velocity.y;
+      const dragMag = 0.5 * dragCoeff * airDensity * crossSectionalArea * velocityY * velocityY;
+      const drag = dragMag * (velocityY > 0 ? 1 : -1);
+      Matter.Body.applyForce(rocketBody, rocketBody.position, { x: 0, y: -drag * dt });
       // Step the engine
-      Matter.Engine.update(engine, dt * 1000);
+      Matter.Engine.update(engine, dt * 1000); // ms
       // Update time and data
       time += dt;
       // Altitude: how high above the pad (in meters)
-      let altitude = Math.max(0, (padY - rocketHeight - rocketBody.position.y) / altitudeScale);
-      let velocity = -rocketBody.velocity.y; // Get velocity from Matter.js body
+      // The rocket's y position decreases as it goes up, so:
+      let altitude = Math.max(0, (padY - rocketBody.position.y) / altitudeScale);
+      let velocity = -velocityY;
       // Clamp/check for NaN/Infinity
       if (!isFinite(altitude) || isNaN(altitude)) altitude = 0;
       if (!isFinite(velocity) || isNaN(velocity)) velocity = 0;
@@ -218,14 +220,11 @@ export default function RocketSimulation2D({
     animationFrameRef.current = requestAnimationFrame(update);
     // Cleanup
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
-      if (engineRef.current) {
-        Matter.Engine.clear(engineRef.current);
-        engineRef.current = null;
-      }
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      Matter.Runner.stop(runnerRef.current!);
+      Matter.Engine.clear(engine);
+      engineRef.current = null;
+      runnerRef.current = null;
       rocketBodyRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
