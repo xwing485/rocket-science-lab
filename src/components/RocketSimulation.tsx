@@ -83,9 +83,20 @@ export default function RocketSimulation2D({
   const noseHeight = 20;
   const engineHeight = 16;
 
+  // --- SCALING FOR MATTER.JS ---
+  // 1 pixel = 1 cm (0.01 m)
+  const PIXELS_PER_METER = 100; // 100 px = 1 m
+  const MATTER_SCALE = 0.01; // 1 px = 0.01 m
+
+  // Scale all physical quantities for Matter.js
+  const scaledMass = mass * 0.01; // scale down by 100x
+  const scaledThrust = thrust * 0.01; // scale down by 100x
+  const scaledDragCoeff = dragCoeff; // drag coefficient is dimensionless
+  const scaledCrossSectionalArea = crossSectionalArea * 0.01; // scale down by 100x
+  const scaledGravity = gravity * 0.01; // scale down by 100x
+
   // Camera follow logic
-  // Adjust the scale so that 1 meter = 30 pixels (typical for model rockets)
-  const altitudeScale = 30; // pixels per meter
+  const altitudeScale = PIXELS_PER_METER; // 100 px = 1 m
   const rocketAltitude = flightData.length > 0 ? flightData[flightData.length - 1].altitude : 0;
   // Center rocket, but don't scroll below ground
   const cameraY = Math.max(0, (padY - rocketHeight - rocketAltitude * altitudeScale) - svgHeight / 2 + rocketHeight / 2);
@@ -138,12 +149,10 @@ export default function RocketSimulation2D({
     if (!isLaunching) return;
     // Debug log at launch
     console.log('Rocket Launch Debug:', {
-      thrust,
-      mass,
-      weight,
+      thrust, mass, weight,
+      scaledThrust, scaledMass, scaledGravity,
       'thrust-to-weight': thrust / weight,
-      dragCoeff,
-      crossSectionalArea,
+      dragCoeff, crossSectionalArea,
     });
     if (!canLiftOff) {
       alert('Thrust is too low for this rocket to lift off! Try increasing engine power or reducing mass.');
@@ -161,17 +170,23 @@ export default function RocketSimulation2D({
     }
     // Create engine and world
     const engine = Matter.Engine.create();
-    engine.gravity.y = gravity / 9.81; // scale gravity to m/s²
+    engine.gravity.y = scaledGravity / 9.81; // scale gravity for Matter.js
     engineRef.current = engine;
     // Create rocket body (vertical, 1D motion)
     // Start the rocket at ground level (padY - rocketHeight)
-    const rocketBody = Matter.Bodies.rectangle(svgWidth / 2, padY - rocketHeight, bodyWidth, rocketHeight, {
-      mass: mass,
-      frictionAir: 0, // We'll handle drag manually
-      friction: 0,
-      restitution: 0,
-      isStatic: false,
-    });
+    const rocketBody = Matter.Bodies.rectangle(
+      svgWidth / 2,
+      padY - rocketHeight,
+      bodyWidth,
+      rocketHeight,
+      {
+        mass: scaledMass,
+        frictionAir: 0, // We'll handle drag manually
+        friction: 0,
+        restitution: 0,
+        isStatic: false,
+      }
+    );
     rocketBodyRef.current = rocketBody;
     Matter.World.add(engine.world, [rocketBody]);
     // State for simulation
@@ -187,12 +202,12 @@ export default function RocketSimulation2D({
       if (time < burnTime) {
         // F = ma, so force = thrust (N)
         // Matter.js expects force in N, but per update: F * dt / mass
-        const force = thrust * dt; // N * s
+        const force = scaledThrust * dt; // scaled N * s
         Matter.Body.applyForce(rocketBody, rocketBody.position, { x: 0, y: -force });
       }
       // Calculate drag (opposes velocity)
       const velocityY = rocketBody.velocity.y;
-      const dragMag = 0.5 * dragCoeff * airDensity * crossSectionalArea * velocityY * velocityY;
+      const dragMag = 0.5 * scaledDragCoeff * airDensity * scaledCrossSectionalArea * velocityY * velocityY;
       const drag = dragMag * (velocityY > 0 ? 1 : -1);
       Matter.Body.applyForce(rocketBody, rocketBody.position, { x: 0, y: -drag * dt });
       // Step the engine
@@ -201,8 +216,9 @@ export default function RocketSimulation2D({
       time += dt;
       // Altitude: how high above the pad (in meters)
       // The rocket's y position decreases as it goes up, so:
-      let altitude = Math.max(0, (padY - rocketBody.position.y) / altitudeScale);
-      let velocity = -velocityY;
+      // Convert from pixels to meters for display
+      let altitude = Math.max(0, (padY - rocketBody.position.y) * MATTER_SCALE);
+      let velocity = -velocityY / dt * MATTER_SCALE; // convert to m/s
       // Clamp/check for NaN/Infinity
       if (!isFinite(altitude) || isNaN(altitude)) altitude = 0;
       if (!isFinite(velocity) || isNaN(velocity)) velocity = 0;
