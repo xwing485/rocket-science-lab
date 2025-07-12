@@ -60,12 +60,20 @@ export default function RocketSimulation2D({
   // Use rocket parameters for simulation
   const rocket = rocketDesign;
   const mass = rocket.totalMass / 1000; // convert g to kg
-  const thrust = rocket.thrust; // N
+  
+  // Scale thrust to realistic model rocket values (typically 5-20N)
+  const maxRealisticThrust = 15; // Newtons for a typical C6 engine
+  const scaledThrust = Math.min(rocket.thrust * 0.1, maxRealisticThrust); // Scale down thrust
+  
   const gravity = 9.81; // m/s²
-  const dragCoeff = rocket.totalDrag || 0.5;
+  const dragCoeff = rocket.totalDrag || 0.75; // Higher drag for model rockets
   const crossSectionalArea = Math.PI * Math.pow((rocket.body.diameter / 1000) / 2, 2); // m²
   const airDensity = 1.225; // kg/m³
-  const burnTime = rocket.engine.thrust ? 2.0 : 0; // seconds (placeholder, can be improved)
+  
+  // Realistic burn times for model rocket engines
+  const burnTime = rocket.engine.name.toLowerCase().includes('c6') ? 1.5 : 
+                   rocket.engine.name.toLowerCase().includes('b6') ? 1.2 : 
+                   rocket.engine.name.toLowerCase().includes('a8') ? 0.8 : 1.0;
 
   // SVG dimensions
   const svgWidth = 300;
@@ -164,18 +172,27 @@ export default function RocketSimulation2D({
     // Thrust and drag application
     const update = () => {
       if (!isLaunching) return;
+      
       // Apply thrust (upwards, only during burn)
       if (time < burnTime) {
-        // F = ma, so force = thrust (N)
-        // Matter.js expects force in N, but per update: F * dt / mass
-        const force = thrust * dt; // N * s
-        Matter.Body.applyForce(rocketBody, rocketBody.position, { x: 0, y: -force });
+        // Apply thrust as acceleration: F = ma, so a = F/m
+        const acceleration = scaledThrust / mass; // m/s²
+        const thrustForce = acceleration * mass * dt; // Convert to force for this time step
+        Matter.Body.applyForce(rocketBody, rocketBody.position, { x: 0, y: -thrustForce });
       }
-      // Calculate drag (opposes velocity)
+      
+      // Calculate drag (opposes velocity) - more realistic for model rockets
       const velocityY = rocketBody.velocity.y;
-      const dragMag = 0.5 * dragCoeff * airDensity * crossSectionalArea * velocityY * velocityY;
-      const drag = dragMag * (velocityY > 0 ? 1 : -1);
-      Matter.Body.applyForce(rocketBody, rocketBody.position, { x: 0, y: -drag * dt });
+      const speed = Math.abs(velocityY);
+      const dragForce = 0.5 * dragCoeff * airDensity * crossSectionalArea * speed * speed;
+      const dragDirection = velocityY > 0 ? 1 : -1;
+      
+      // Apply drag force
+      if (speed > 0.1) { // Only apply drag if moving significantly
+        const dragAcceleration = (dragForce / mass) * dragDirection;
+        Matter.Body.applyForce(rocketBody, rocketBody.position, { x: 0, y: dragAcceleration * mass * dt });
+      }
+      
       // Step the engine
       Matter.Engine.update(engine, dt * 1000); // ms
       // Update time and data
@@ -239,8 +256,8 @@ export default function RocketSimulation2D({
     setRocketPosition({ x: svgWidth / 2, y: padY - rocketHeight });
   };
 
-  // Calculate thrust-to-weight ratio for stats
-  const thrustToWeightRatio = rocket.thrust / (rocket.totalMass / 1000 * gravity);
+  // Calculate thrust-to-weight ratio for stats (using scaled thrust)
+  const thrustToWeightRatio = scaledThrust / (rocket.totalMass / 1000 * gravity);
 
   // Prepare simulation results for AI coach
   const maxAltitude = flightData.length > 0 ? Math.max(...flightData.map(d => d.altitude)) : 0;
