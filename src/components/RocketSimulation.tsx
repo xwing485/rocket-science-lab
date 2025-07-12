@@ -60,20 +60,16 @@ export default function RocketSimulation2D({
   // Use rocket parameters for simulation
   const rocket = rocketDesign;
   const mass = rocket.totalMass / 1000; // convert g to kg
-  
-  // Scale thrust to realistic model rocket values (typically 5-20N)
-  const maxRealisticThrust = 15; // Newtons for a typical C6 engine
-  const scaledThrust = Math.min(rocket.thrust * 0.1, maxRealisticThrust); // Scale down thrust
-  
+  const thrust = rocket.thrust; // N
   const gravity = 9.81; // m/s²
-  const dragCoeff = rocket.totalDrag || 0.75; // Higher drag for model rockets
+  const dragCoeff = rocket.totalDrag || 0.5;
   const crossSectionalArea = Math.PI * Math.pow((rocket.body.diameter / 1000) / 2, 2); // m²
   const airDensity = 1.225; // kg/m³
-  
-  // Realistic burn times for model rocket engines
-  const burnTime = rocket.engine.name.toLowerCase().includes('c6') ? 1.5 : 
-                   rocket.engine.name.toLowerCase().includes('b6') ? 1.2 : 
-                   rocket.engine.name.toLowerCase().includes('a8') ? 0.8 : 1.0;
+  const burnTime = rocket.engine.thrust ? 2.0 : 0; // seconds (placeholder, can be improved)
+
+  // Debug: Calculate weight and thrust-to-weight ratio
+  const weight = mass * gravity;
+  const canLiftOff = thrust > weight;
 
   // SVG dimensions
   const svgWidth = 300;
@@ -140,6 +136,21 @@ export default function RocketSimulation2D({
   // --- Matter.js Physics Simulation ---
   useEffect(() => {
     if (!isLaunching) return;
+    // Debug log at launch
+    console.log('Rocket Launch Debug:', {
+      thrust,
+      mass,
+      weight,
+      'thrust-to-weight': thrust / weight,
+      dragCoeff,
+      crossSectionalArea,
+    });
+    if (!canLiftOff) {
+      alert('Thrust is too low for this rocket to lift off! Try increasing engine power or reducing mass.');
+      setIsLaunching(false);
+      onProgressUpdate('simulationRun', false);
+      return;
+    }
     // Clean up any previous engine
     if (engineRef.current) {
       Matter.Runner.stop(runnerRef.current!);
@@ -253,7 +264,7 @@ export default function RocketSimulation2D({
   };
 
   // Calculate thrust-to-weight ratio for stats (using scaled thrust)
-  const thrustToWeightRatio = scaledThrust / (rocket.totalMass / 1000 * gravity);
+  const thrustToWeightRatio = thrust / (mass * gravity);
 
   // Prepare simulation results for AI coach
   const maxAltitude = flightData.length > 0 ? Math.max(...flightData.map(d => d.altitude)) : 0;
