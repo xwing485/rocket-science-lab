@@ -39,7 +39,7 @@ export default function RocketSimulation2D({
 }: RocketSimulation2DProps) {
   const [isLaunching, setIsLaunching] = useState(false);
   const [flightTime, setFlightTime] = useState(0);
-  const [rocketPosition, setRocketPosition] = useState({ x: 150, y: 260 });
+  // No need for rocketPosition state; rocket X is always centered, Y is derived from altitude
   const [flightData, setFlightData] = useState<Array<{time: number, altitude: number, velocity: number}>>([]);
   // Remove Matter.js refs
   const animationFrameRef = useRef<number | null>(null);
@@ -88,13 +88,10 @@ export default function RocketSimulation2D({
   // Camera follow logic
   // The camera should follow the rocket so it stays centered vertically, but not scroll below ground
   const rocketAltitude = flightData.length > 0 ? flightData[flightData.length - 1].altitude : 0;
-  // Calculate the rocket's Y position in SVG coordinates (base sits on ground)
-  // The rocket's base should always sit exactly on top of the ground (flush with bottom)
-  // When altitude = 0, rocket base = svgHeight - groundHeight
-  const rocketY = svgHeight - groundHeight - rocketHeight - rocketAltitude * PIXELS_PER_METER;
-  // Camera: follow rocket, but ground is always at the bottom of the SVG
-  let cameraY = rocketY - svgHeight / 2 + rocketHeight / 2;
-  // Clamp camera so ground never scrolls below the SVG (but allow following rocket upward)
+  // Calculate rocket's world Y position (base sits on ground at altitude 0)
+  const rocketWorldY = svgHeight - groundHeight - rocketHeight - rocketAltitude * PIXELS_PER_METER;
+  // Camera: follow rocket, center vertically, but never scroll below ground
+  let cameraY = rocketWorldY - svgHeight / 2 + rocketHeight / 2;
   if (cameraY < 0) cameraY = 0;
 
   // SVG part styles based on rocketDesign
@@ -157,7 +154,7 @@ export default function RocketSimulation2D({
     let maxVelocity = 0;
     const dt = 1 / 60; // 60 FPS
     // Start at pad
-    setRocketPosition({ x: svgWidth / 2, y: groundY - rocketHeight });
+    // No need to set rocketPosition; rocket is always centered horizontally, Y is derived from altitude
     // Animation loop
     const update = () => {
       // Forces
@@ -179,7 +176,7 @@ export default function RocketSimulation2D({
       data.push({ time, altitude, velocity });
       setFlightTime(time);
       setFlightData([...data]);
-      setRocketPosition({ x: svgWidth / 2, y: groundY - rocketHeight - altitude * PIXELS_PER_METER });
+      // No need to set rocketPosition; rocket is always centered horizontally, Y is derived from altitude
       maxAltitude = Math.max(maxAltitude, altitude);
       maxVelocity = Math.max(maxVelocity, Math.abs(velocity));
       // Stop if rocket hits ground after launch
@@ -212,7 +209,7 @@ export default function RocketSimulation2D({
     setIsLaunching(true);
     setFlightTime(0);
     setFlightData([]);
-    setRocketPosition({ x: svgWidth / 2, y: groundY - rocketHeight });
+    // No need to set rocketPosition; rocket is always centered horizontally, Y is derived from altitude
     onProgressUpdate('simulationRun', true);
   };
 
@@ -255,7 +252,7 @@ export default function RocketSimulation2D({
               {/* Ground is always at the bottom of the SVG */}
               <rect x={0} y={cameraY + svgHeight - groundHeight} width={svgWidth} height={groundHeight} fill="#3b3b3b" />
               {/* Rocket (base sits flush on ground and moves with simulation) */}
-              <g transform={`translate(${rocketPosition.x - bodyWidth/2}, ${rocketPosition.y - cameraY})`}>
+              <g transform={`translate(${svgWidth/2 - bodyWidth/2}, ${rocketWorldY - cameraY})`}>
                 {/* Engine flame (only during powered ascent) */}
                 {isLaunching && flightTime <= burnTime && (
                   <ellipse cx={bodyWidth/2} cy={rocketHeight + engineHeight/2} rx={10} ry={8} fill="#fff7ae" opacity="0.7" />
