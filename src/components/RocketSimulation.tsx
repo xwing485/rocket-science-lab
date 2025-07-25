@@ -254,32 +254,37 @@ export default function RocketSimulation2D({
               style={{ background: 'linear-gradient(to bottom, #87CEEB 0%, #b6d0e2 100%)', borderRadius: 12 }}
               viewBox={`0 ${cameraY} ${svgWidth} ${svgHeight}`}
             >
-              {/* Clouds for visual reference */}
+              {/* Infinite clouds for visual reference */}
               <g>
-                {/* Cloud 1 - low altitude */}
-                <g transform="translate(50, 200)">
-                  <ellipse cx="0" cy="0" rx="25" ry="15" fill="white" opacity="0.8" />
-                  <ellipse cx="20" cy="-5" rx="20" ry="12" fill="white" opacity="0.8" />
-                  <ellipse cx="-15" cy="-3" rx="18" ry="10" fill="white" opacity="0.8" />
-                </g>
-                {/* Cloud 2 - medium altitude */}
-                <g transform="translate(200, 100)">
-                  <ellipse cx="0" cy="0" rx="30" ry="18" fill="white" opacity="0.7" />
-                  <ellipse cx="25" cy="-8" rx="22" ry="14" fill="white" opacity="0.7" />
-                  <ellipse cx="-20" cy="-5" rx="20" ry="12" fill="white" opacity="0.7" />
-                </g>
-                {/* Cloud 3 - high altitude */}
-                <g transform="translate(80, -50)">
-                  <ellipse cx="0" cy="0" rx="28" ry="16" fill="white" opacity="0.6" />
-                  <ellipse cx="22" cy="-6" rx="20" ry="12" fill="white" opacity="0.6" />
-                  <ellipse cx="-18" cy="-4" rx="16" ry="10" fill="white" opacity="0.6" />
-                </g>
-                {/* Cloud 4 - very high altitude */}
-                <g transform="translate(170, -150)">
-                  <ellipse cx="0" cy="0" rx="35" ry="20" fill="white" opacity="0.5" />
-                  <ellipse cx="28" cy="-10" rx="25" ry="15" fill="white" opacity="0.5" />
-                  <ellipse cx="-22" cy="-6" rx="22" ry="13" fill="white" opacity="0.5" />
-                </g>
+                {/* Generate clouds at different altitudes relative to camera */}
+                {Array.from({ length: 15 }, (_, i) => {
+                  const cloudAltitude = (i - 5) * 100; // Clouds every 100 units
+                  const cloudY = cloudAltitude + cameraY;
+                  const opacity = Math.max(0.3, 0.8 - Math.abs(i - 7) * 0.1);
+                  
+                  return (
+                    <g key={i}>
+                      {/* Cloud set 1 */}
+                      <g transform={`translate(${50 + (i % 3) * 20}, ${cloudY})`}>
+                        <ellipse cx="0" cy="0" rx="25" ry="15" fill="white" opacity={opacity} />
+                        <ellipse cx="20" cy="-5" rx="20" ry="12" fill="white" opacity={opacity} />
+                        <ellipse cx="-15" cy="-3" rx="18" ry="10" fill="white" opacity={opacity} />
+                      </g>
+                      {/* Cloud set 2 */}
+                      <g transform={`translate(${200 + (i % 2) * 30}, ${cloudY - 30})`}>
+                        <ellipse cx="0" cy="0" rx="30" ry="18" fill="white" opacity={opacity * 0.9} />
+                        <ellipse cx="25" cy="-8" rx="22" ry="14" fill="white" opacity={opacity * 0.9} />
+                        <ellipse cx="-20" cy="-5" rx="20" ry="12" fill="white" opacity={opacity * 0.9} />
+                      </g>
+                      {/* Cloud set 3 */}
+                      <g transform={`translate(${120 + (i % 4) * 15}, ${cloudY + 50})`}>
+                        <ellipse cx="0" cy="0" rx="28" ry="16" fill="white" opacity={opacity * 0.8} />
+                        <ellipse cx="22" cy="-6" rx="20" ry="12" fill="white" opacity={opacity * 0.8} />
+                        <ellipse cx="-18" cy="-4" rx="16" ry="10" fill="white" opacity={opacity * 0.8} />
+                      </g>
+                    </g>
+                  );
+                })}
               </g>
               {/* Rocket (base sits flush on ground and moves with simulation) */}
             <g transform={`translate(${svgWidth/2 - bodyWidth/2}, ${rocketWorldY})`}>
