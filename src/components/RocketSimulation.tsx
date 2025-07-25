@@ -94,8 +94,8 @@ export default function RocketSimulation2D({
   if (rocketBaseY < svgHeight / 2 - rocketHeight / 2) {
     cameraY = svgHeight / 2 - rocketHeight / 2 - rocketBaseY;
   }
-  // The rocket's Y in SVG is always rocketBaseY + cameraY
-  const rocketWorldY = rocketBaseY + cameraY;
+  // The rocket's Y in SVG is always rocketBaseY (camera handled by viewBox)
+  const rocketWorldY = rocketBaseY;
 
   // SVG part styles based on rocketDesign
   // Nose cone
@@ -254,7 +254,7 @@ export default function RocketSimulation2D({
             >
               {/* No ground/floor, rocket starts at the very bottom */}
               {/* Rocket (base sits flush on ground and moves with simulation) */}
-              <g transform={`translate(${svgWidth/2 - bodyWidth/2}, ${rocketWorldY - cameraY})`}>
+            <g transform={`translate(${svgWidth/2 - bodyWidth/2}, ${rocketWorldY})`}>
                 {/* Engine flame (only during powered ascent) */}
                 {isLaunching && flightTime <= burnTime && (
                   <ellipse cx={bodyWidth/2} cy={rocketHeight + engineHeight/2} rx={10} ry={8} fill="#fff7ae" opacity="0.7" />
