@@ -95,7 +95,9 @@ export default function RocketSimulation2D({
   const rocketTopY = rocketWorldY;
   const centerY = svgHeight / 2 - rocketHeight / 2;
   if (rocketTopY < centerY) {
-    cameraY = centerY - rocketTopY;
+    cameraY = 0;
+  } else {
+    cameraY = rocketTopY - centerY;
   }
 
   // SVG part styles based on rocketDesign
