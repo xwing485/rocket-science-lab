@@ -72,7 +72,9 @@ export default function RocketSimulation2D({
   // SVG dimensions
   const svgWidth = 300;
   const svgHeight = 300;
-  const groundY = svgHeight - 30;
+  // Make groundY at the very bottom of the SVG
+  const groundY = svgHeight;
+  // Place the pad just above the ground (e.g., 20px tall pad)
   const padY = groundY - 20;
 
   // Rocket dimensions
