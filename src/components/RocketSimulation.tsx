@@ -89,14 +89,13 @@ export default function RocketSimulation2D({
   const rocketAltitude = flightData.length > 0 ? flightData[flightData.length - 1].altitude : 0;
   // World Y: base at bottom at launch
   const rocketBaseY = svgHeight - rocketHeight - rocketAltitude * PIXELS_PER_METER;
-  // Camera: only follow when rocket would go above center
+  // Camera: follow so rocket is always centered after it leaves the bottom
   let cameraY = 0;
   if (rocketBaseY < svgHeight / 2 - rocketHeight / 2) {
-    cameraY = rocketBaseY - (svgHeight / 2 - rocketHeight / 2);
-    if (cameraY < 0) cameraY = 0;
+    cameraY = svgHeight / 2 - rocketHeight / 2 - rocketBaseY;
   }
-  // The rocket's Y in SVG is always rocketBaseY - cameraY
-  const rocketWorldY = rocketBaseY;
+  // The rocket's Y in SVG is always rocketBaseY + cameraY
+  const rocketWorldY = rocketBaseY + cameraY;
 
   // SVG part styles based on rocketDesign
   // Nose cone
