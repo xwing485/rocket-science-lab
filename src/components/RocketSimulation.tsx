@@ -72,9 +72,9 @@ export default function RocketSimulation2D({
   // SVG dimensions
   const svgWidth = 300;
   const svgHeight = 300;
-  // Make ground a thin strip at the very bottom
-  const groundHeight = 8;
-  const groundY = svgHeight - groundHeight;
+  // Make ground flush with the absolute bottom of the SVG (y=svgHeight)
+  const groundHeight = 12; // slightly thicker for visibility
+  const groundY = svgHeight - groundHeight; // y position for ground rect
 
   // Rocket dimensions
   const rocketWidth = 24;
@@ -89,9 +89,14 @@ export default function RocketSimulation2D({
   // The camera should follow the rocket so it stays centered vertically, but not scroll below ground
   const rocketAltitude = flightData.length > 0 ? flightData[flightData.length - 1].altitude : 0;
   // Calculate the rocket's Y position in SVG coordinates (base sits on ground)
-  const rocketY = groundY - rocketHeight - rocketAltitude * PIXELS_PER_METER;
-  // Center the camera on the rocket (ground may scroll out of view)
-  const cameraY = rocketY - svgHeight / 2 + rocketHeight / 2;
+  // The rocket's base should always sit exactly on top of the ground (flush with bottom)
+  // When altitude = 0, rocket base = svgHeight - groundHeight
+  const rocketY = svgHeight - groundHeight - rocketHeight - rocketAltitude * PIXELS_PER_METER;
+  // Camera: follow rocket, but ground is always at the bottom of the SVG
+  let cameraY = rocketY - svgHeight / 2 + rocketHeight / 2;
+  // Clamp camera so ground never scrolls below the SVG
+  if (cameraY < 0) cameraY = 0;
+  if (cameraY > 0) cameraY = 0;
 
   // SVG part styles based on rocketDesign
   // Nose cone
@@ -248,10 +253,10 @@ export default function RocketSimulation2D({
               style={{ background: '#b6d0e2', borderRadius: 12 }}
               viewBox={`0 ${cameraY} ${svgWidth} ${svgHeight}`}
             >
-              {/* Ground (thin strip at very bottom) */}
-              <rect x={0} y={groundY} width={svgWidth} height={groundHeight} fill="#3b3b3b" />
-              {/* Rocket (base sits on ground and moves with simulation) */}
-              <g transform={`translate(${rocketPosition.x - bodyWidth/2}, ${rocketPosition.y})`}>
+              {/* Ground is always at the bottom of the SVG */}
+              <rect x={0} y={svgHeight - groundHeight} width={svgWidth} height={groundHeight} fill="#3b3b3b" />
+              {/* Rocket (base sits flush on ground and moves with simulation) */}
+              <g transform={`translate(${rocketPosition.x - bodyWidth/2}, ${rocketY})`}>
                 {/* Engine flame (only during powered ascent) */}
                 {isLaunching && flightTime <= burnTime && (
                   <ellipse cx={bodyWidth/2} cy={rocketHeight + engineHeight/2} rx={10} ry={8} fill="#fff7ae" opacity="0.7" />
