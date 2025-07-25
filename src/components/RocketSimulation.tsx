@@ -254,34 +254,31 @@ export default function RocketSimulation2D({
               style={{ background: 'linear-gradient(to bottom, #87CEEB 0%, #b6d0e2 100%)', borderRadius: 12 }}
               viewBox={`0 ${cameraY} ${svgWidth} ${svgHeight}`}
             >
-              {/* Infinite clouds for visual reference */}
+              {/* Infinite random clouds for visual reference */}
               <g>
                 {/* Generate clouds at different altitudes relative to camera */}
-                {Array.from({ length: 15 }, (_, i) => {
-                  const cloudAltitude = (i - 5) * 100; // Clouds every 100 units
+                {Array.from({ length: 20 }, (_, i) => {
+                  // Use seed-based random for consistent cloud positions
+                  const seed = i * 1234567;
+                  const random1 = ((seed * 9301 + 49297) % 233280) / 233280;
+                  const random2 = ((seed * 9301 + 49297 + 1000) % 233280) / 233280;
+                  const random3 = ((seed * 9301 + 49297 + 2000) % 233280) / 233280;
+                  const random4 = ((seed * 9301 + 49297 + 3000) % 233280) / 233280;
+                  
+                  const cloudAltitude = (i - 10) * (60 + random1 * 80); // Irregular spacing
                   const cloudY = cloudAltitude + cameraY;
-                  const opacity = Math.max(0.3, 0.8 - Math.abs(i - 7) * 0.1);
+                  const opacity = Math.max(0.3, 0.8 - Math.abs(cloudAltitude / 500) * 0.1);
+                  const cloudX = 30 + random2 * 200; // Random X position
+                  const cloudSize = 0.7 + random3 * 0.6; // Random size
+                  const shouldShow = random4 > 0.3; // Only show 70% of clouds
+                  
+                  if (!shouldShow) return null;
                   
                   return (
-                    <g key={i}>
-                      {/* Cloud set 1 */}
-                      <g transform={`translate(${50 + (i % 3) * 20}, ${cloudY})`}>
-                        <ellipse cx="0" cy="0" rx="25" ry="15" fill="white" opacity={opacity} />
-                        <ellipse cx="20" cy="-5" rx="20" ry="12" fill="white" opacity={opacity} />
-                        <ellipse cx="-15" cy="-3" rx="18" ry="10" fill="white" opacity={opacity} />
-                      </g>
-                      {/* Cloud set 2 */}
-                      <g transform={`translate(${200 + (i % 2) * 30}, ${cloudY - 30})`}>
-                        <ellipse cx="0" cy="0" rx="30" ry="18" fill="white" opacity={opacity * 0.9} />
-                        <ellipse cx="25" cy="-8" rx="22" ry="14" fill="white" opacity={opacity * 0.9} />
-                        <ellipse cx="-20" cy="-5" rx="20" ry="12" fill="white" opacity={opacity * 0.9} />
-                      </g>
-                      {/* Cloud set 3 */}
-                      <g transform={`translate(${120 + (i % 4) * 15}, ${cloudY + 50})`}>
-                        <ellipse cx="0" cy="0" rx="28" ry="16" fill="white" opacity={opacity * 0.8} />
-                        <ellipse cx="22" cy="-6" rx="20" ry="12" fill="white" opacity={opacity * 0.8} />
-                        <ellipse cx="-18" cy="-4" rx="16" ry="10" fill="white" opacity={opacity * 0.8} />
-                      </g>
+                    <g key={i} transform={`translate(${cloudX}, ${cloudY}) scale(${cloudSize})`}>
+                      <ellipse cx="0" cy="0" rx="25" ry="15" fill="white" opacity={opacity} />
+                      <ellipse cx="20" cy="-5" rx="20" ry="12" fill="white" opacity={opacity} />
+                      <ellipse cx="-15" cy="-3" rx="18" ry="10" fill="white" opacity={opacity} />
                     </g>
                   );
                 })}
