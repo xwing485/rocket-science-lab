@@ -89,8 +89,8 @@ export default function RocketSimulation2D({
   const rocketAltitude = flightData.length > 0 ? flightData[flightData.length - 1].altitude : 0;
   // Calculate the rocket's Y position in SVG coordinates
   const rocketY = padY - rocketHeight - rocketAltitude * PIXELS_PER_METER;
-  // Center the camera on the rocket, but don't scroll below ground
-  const cameraY = Math.max(0, rocketY - svgHeight / 2 + rocketHeight / 2);
+  // Center the camera on the rocket (ground may scroll out of view)
+  const cameraY = rocketY - svgHeight / 2 + rocketHeight / 2;
 
   // SVG part styles based on rocketDesign
   // Nose cone
