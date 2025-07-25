@@ -88,8 +88,8 @@ export default function RocketSimulation2D({
   // Camera follow logic
   // The camera should follow the rocket so it stays centered vertically, but not scroll below ground
   const rocketAltitude = flightData.length > 0 ? flightData[flightData.length - 1].altitude : 0;
-  // Calculate rocket's world Y position (base sits on ground at altitude 0)
-  const rocketWorldY = svgHeight - groundHeight - rocketHeight - rocketAltitude * PIXELS_PER_METER;
+  // Calculate rocket's world Y position (base sits at very bottom at altitude 0)
+  const rocketWorldY = svgHeight - rocketHeight - rocketAltitude * PIXELS_PER_METER;
   // Camera: keep ground at bottom until rocket rises above center, then follow rocket
   const rocketTopY = rocketWorldY;
   const centerY = svgHeight / 2 - rocketHeight / 2;
@@ -251,8 +251,7 @@ export default function RocketSimulation2D({
               style={{ background: '#b6d0e2', borderRadius: 12 }}
               viewBox={`0 ${cameraY} ${svgWidth} ${svgHeight}`}
             >
-              {/* Ground is always at the bottom of the SVG */}
-              <rect x={0} y={svgHeight - groundHeight} width={svgWidth} height={groundHeight} fill="#3b3b3b" />
+              {/* No ground/floor, rocket starts at the very bottom */}
               {/* Rocket (base sits flush on ground and moves with simulation) */}
               <g transform={`translate(${svgWidth/2 - bodyWidth/2}, ${rocketWorldY - cameraY})`}>
                 {/* Engine flame (only during powered ascent) */}
