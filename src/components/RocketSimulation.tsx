@@ -55,19 +55,21 @@ export default function RocketSimulation2D({
     );
   }
 
-  // Use rocket parameters for simulation
+  // Use rocket parameters for simulation with more realistic values
   const rocket = rocketDesign;
   const mass = rocket.totalMass / 1000; // convert g to kg
-  const thrust = rocket.thrust; // N
+  const thrust = Math.max(rocket.thrust * 0.5, 20); // Scale thrust to be more reasonable, min 20N
   const gravity = 9.81; // m/s²
   const dragCoeff = rocket.totalDrag || 0.5;
   const crossSectionalArea = Math.PI * Math.pow((rocket.body.diameter / 1000) / 2, 2); // m²
   const airDensity = 1.225; // kg/m³
-  const burnTime = rocket.engine.thrust ? 2.0 : 0; // seconds (placeholder, can be improved)
+  const burnTime = rocket.engine.thrust ? 3.0 : 0; // Longer burn time for better visibility
 
   // Debug: Calculate weight and thrust-to-weight ratio
   const weight = mass * gravity;
   const canLiftOff = thrust > weight;
+  
+  console.log('Rocket Physics:', { mass, thrust, weight, canLiftOff, thrustToWeightRatio: thrust/weight });
 
   // SVG dimensions
   const svgWidth = 300;
