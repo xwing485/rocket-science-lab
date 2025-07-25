@@ -75,9 +75,6 @@ export default function RocketSimulation2D({
   // Make ground a thin strip at the very bottom
   const groundHeight = 8;
   const groundY = svgHeight - groundHeight;
-  // Place the pad directly on top of the ground
-  const padHeight = 24;
-  const padY = groundY - padHeight;
 
   // Rocket dimensions
   const rocketWidth = 24;
@@ -91,8 +88,8 @@ export default function RocketSimulation2D({
   // Camera follow logic
   // The camera should follow the rocket so it stays centered vertically, but not scroll below ground
   const rocketAltitude = flightData.length > 0 ? flightData[flightData.length - 1].altitude : 0;
-  // Calculate the rocket's Y position in SVG coordinates
-  const rocketY = padY - rocketHeight - rocketAltitude * PIXELS_PER_METER;
+  // Calculate the rocket's Y position in SVG coordinates (base sits on ground)
+  const rocketY = groundY - rocketHeight - rocketAltitude * PIXELS_PER_METER;
   // Center the camera on the rocket (ground may scroll out of view)
   const cameraY = rocketY - svgHeight / 2 + rocketHeight / 2;
 
@@ -156,7 +153,7 @@ export default function RocketSimulation2D({
     let maxVelocity = 0;
     const dt = 1 / 60; // 60 FPS
     // Start at pad
-    setRocketPosition({ x: svgWidth / 2, y: padY - rocketHeight });
+    setRocketPosition({ x: svgWidth / 2, y: groundY - rocketHeight });
     // Animation loop
     const update = () => {
       // Forces
@@ -178,7 +175,7 @@ export default function RocketSimulation2D({
       data.push({ time, altitude, velocity });
       setFlightTime(time);
       setFlightData([...data]);
-      setRocketPosition({ x: svgWidth / 2, y: padY - rocketHeight - altitude * PIXELS_PER_METER });
+      setRocketPosition({ x: svgWidth / 2, y: groundY - rocketHeight - altitude * PIXELS_PER_METER });
       maxAltitude = Math.max(maxAltitude, altitude);
       maxVelocity = Math.max(maxVelocity, Math.abs(velocity));
       // Stop if rocket hits ground after launch
@@ -211,7 +208,7 @@ export default function RocketSimulation2D({
     setIsLaunching(true);
     setFlightTime(0);
     setFlightData([]);
-    setRocketPosition({ x: svgWidth / 2, y: padY - rocketHeight });
+    setRocketPosition({ x: svgWidth / 2, y: groundY - rocketHeight });
     onProgressUpdate('simulationRun', true);
   };
 
@@ -219,7 +216,7 @@ export default function RocketSimulation2D({
     setIsLaunching(false);
     setFlightTime(0);
     setFlightData([]);
-    setRocketPosition({ x: svgWidth / 2, y: padY - rocketHeight });
+    setRocketPosition({ x: svgWidth / 2, y: groundY - rocketHeight });
   };
 
   // Calculate thrust-to-weight ratio for stats (using scaled thrust)
@@ -253,10 +250,8 @@ export default function RocketSimulation2D({
             >
               {/* Ground (thin strip at very bottom) */}
               <rect x={0} y={groundY} width={svgWidth} height={groundHeight} fill="#3b3b3b" />
-              {/* Launch Pad (wider, sits directly on ground) */}
-              <rect x={svgWidth/2 - 60} y={padY} width={120} height={padHeight} fill="#232323" stroke="#111" strokeWidth={2} rx={12} />
-              {/* Rocket */}
-              <g transform={`translate(${rocketPosition.x - bodyWidth/2}, ${rocketPosition.y})`}>
+              {/* Rocket (base sits on ground) */}
+              <g transform={`translate(${rocketPosition.x - bodyWidth/2}, ${groundY - rocketHeight})`}>
                 {/* Engine flame (only during powered ascent) */}
                 {isLaunching && flightTime <= burnTime && (
                   <ellipse cx={bodyWidth/2} cy={rocketHeight + engineHeight/2} rx={10} ry={8} fill="#fff7ae" opacity="0.7" />
