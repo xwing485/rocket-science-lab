@@ -72,11 +72,11 @@ export default function RocketSimulation2D({
   // SVG dimensions
   const svgWidth = 300;
   const svgHeight = 300;
-  // Make ground a visible strip at the very bottom
-  const groundHeight = 20;
+  // Make ground a thin strip at the very bottom
+  const groundHeight = 8;
   const groundY = svgHeight - groundHeight;
-  // Place the pad just above the ground (pad is 20px tall)
-  const padHeight = 20;
+  // Place the pad directly on top of the ground
+  const padHeight = 24;
   const padY = groundY - padHeight;
 
   // Rocket dimensions
@@ -251,10 +251,10 @@ export default function RocketSimulation2D({
               style={{ background: '#b6d0e2', borderRadius: 12 }}
               viewBox={`0 ${cameraY} ${svgWidth} ${svgHeight}`}
             >
-              {/* Ground (20px tall at bottom) */}
+              {/* Ground (thin strip at very bottom) */}
               <rect x={0} y={groundY} width={svgWidth} height={groundHeight} fill="#3b3b3b" />
-              {/* Launch Pad (wider, sits on ground) */}
-              <rect x={svgWidth/2 - 60} y={padY} width={120} height={padHeight} fill="#232323" stroke="#111" strokeWidth={2} rx={8} />
+              {/* Launch Pad (wider, sits directly on ground) */}
+              <rect x={svgWidth/2 - 60} y={padY} width={120} height={padHeight} fill="#232323" stroke="#111" strokeWidth={2} rx={12} />
               {/* Rocket */}
               <g transform={`translate(${rocketPosition.x - bodyWidth/2}, ${rocketPosition.y})`}>
                 {/* Engine flame (only during powered ascent) */}
