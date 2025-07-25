@@ -217,7 +217,7 @@ export default function RocketSimulation2D({
     setIsLaunching(false);
     setFlightTime(0);
     setFlightData([]);
-    setRocketPosition({ x: svgWidth / 2, y: groundY - rocketHeight });
+    // No need to set rocketPosition; rocket is always centered horizontally, Y is derived from altitude
   };
 
   // Calculate thrust-to-weight ratio for stats (using scaled thrust)
