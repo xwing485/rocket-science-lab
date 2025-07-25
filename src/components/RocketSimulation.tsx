@@ -91,14 +91,10 @@ export default function RocketSimulation2D({
   // Calculate rocket's world Y position (base sits on ground at altitude 0)
   const rocketWorldY = svgHeight - groundHeight - rocketHeight - rocketAltitude * PIXELS_PER_METER;
   // Camera: keep ground at bottom until rocket rises above center, then follow rocket
-  let cameraY = 0;
   const rocketTopY = rocketWorldY;
   const centerY = svgHeight / 2 - rocketHeight / 2;
-  if (rocketTopY < centerY) {
-    cameraY = 0;
-  } else {
-    cameraY = rocketTopY - centerY;
-  }
+  let cameraY = rocketTopY - centerY;
+  if (cameraY < 0) cameraY = 0;
 
   // SVG part styles based on rocketDesign
   // Nose cone
