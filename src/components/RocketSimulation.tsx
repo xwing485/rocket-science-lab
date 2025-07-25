@@ -90,10 +90,8 @@ export default function RocketSimulation2D({
   const rocketAltitude = flightData.length > 0 ? flightData[flightData.length - 1].altitude : 0;
   // Calculate rocket's world Y position (base sits at very bottom at altitude 0)
   const rocketWorldY = svgHeight - rocketHeight - rocketAltitude * PIXELS_PER_METER;
-  // Camera: keep ground at bottom until rocket rises above center, then follow rocket
-  const rocketTopY = rocketWorldY;
-  const centerY = svgHeight / 2 - rocketHeight / 2;
-  let cameraY = rocketTopY - centerY;
+  // Camera: always try to center rocket, but never scroll below bottom
+  let cameraY = rocketWorldY - (svgHeight / 2 - rocketHeight / 2);
   if (cameraY < 0) cameraY = 0;
 
   // SVG part styles based on rocketDesign
