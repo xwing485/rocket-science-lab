@@ -85,12 +85,11 @@ export default function RocketSimulation2D({
   // 1 pixel = 1 cm (0.01 m)
   const PIXELS_PER_METER = 100; // 100 px = 1 m
 
-  // Camera follow logic
-  // The camera should follow the rocket so it stays centered vertically, but not scroll below ground
+  // Camera follow logic: base at bottom at launch, then camera follows upward
   const rocketAltitude = flightData.length > 0 ? flightData[flightData.length - 1].altitude : 0;
-  // Calculate rocket's world Y position (base sits at very bottom at altitude 0)
+  // At altitude 0, base sits at bottom of SVG
   const rocketWorldY = svgHeight - rocketHeight - rocketAltitude * PIXELS_PER_METER;
-  // Camera: always try to center rocket, but never scroll below bottom
+  // Camera: only move up to keep rocket centered after it rises above halfway
   let cameraY = rocketWorldY - (svgHeight / 2 - rocketHeight / 2);
   if (cameraY < 0) cameraY = 0;
 
