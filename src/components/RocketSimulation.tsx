@@ -85,10 +85,12 @@ export default function RocketSimulation2D({
   const PIXELS_PER_METER = 100; // 100 px = 1 m
 
   // Camera follow logic
-  const altitudeScale = PIXELS_PER_METER; // 100 px = 1 m
+  // The camera should follow the rocket so it stays centered vertically, but not scroll below ground
   const rocketAltitude = flightData.length > 0 ? flightData[flightData.length - 1].altitude : 0;
-  // Center rocket, but don't scroll below ground
-  const cameraY = Math.max(0, (padY - rocketHeight - rocketAltitude * altitudeScale) - svgHeight / 2 + rocketHeight / 2);
+  // Calculate the rocket's Y position in SVG coordinates
+  const rocketY = padY - rocketHeight - rocketAltitude * PIXELS_PER_METER;
+  // Center the camera on the rocket, but don't scroll below ground
+  const cameraY = Math.max(0, rocketY - svgHeight / 2 + rocketHeight / 2);
 
   // SVG part styles based on rocketDesign
   // Nose cone
