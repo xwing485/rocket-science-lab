@@ -94,9 +94,8 @@ export default function RocketSimulation2D({
   const rocketY = svgHeight - groundHeight - rocketHeight - rocketAltitude * PIXELS_PER_METER;
   // Camera: follow rocket, but ground is always at the bottom of the SVG
   let cameraY = rocketY - svgHeight / 2 + rocketHeight / 2;
-  // Clamp camera so ground never scrolls below the SVG
+  // Clamp camera so ground never scrolls below the SVG (but allow following rocket upward)
   if (cameraY < 0) cameraY = 0;
-  if (cameraY > 0) cameraY = 0;
 
   // SVG part styles based on rocketDesign
   // Nose cone
