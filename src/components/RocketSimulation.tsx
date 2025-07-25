@@ -253,9 +253,9 @@ export default function RocketSimulation2D({
               viewBox={`0 ${cameraY} ${svgWidth} ${svgHeight}`}
             >
               {/* Ground is always at the bottom of the SVG */}
-              <rect x={0} y={cameraY + svgHeight - groundHeight} width={svgWidth} height={groundHeight} fill="#3b3b3b" />
+              <rect x={0} y={svgHeight - groundHeight} width={svgWidth} height={groundHeight} fill="#3b3b3b" />
               {/* Rocket (base sits flush on ground and moves with simulation) */}
-              <g transform={`translate(${rocketPosition.x - bodyWidth/2}, ${rocketY})`}>
+              <g transform={`translate(${rocketPosition.x - bodyWidth/2}, ${rocketY - cameraY})`}>
                 {/* Engine flame (only during powered ascent) */}
                 {isLaunching && flightTime <= burnTime && (
                   <ellipse cx={bodyWidth/2} cy={rocketHeight + engineHeight/2} rx={10} ry={8} fill="#fff7ae" opacity="0.7" />
