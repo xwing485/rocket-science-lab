@@ -179,7 +179,8 @@ export default function RocketSimulation2D({
       // Clamp to ground
       if (altitude < 0) {
         altitude = 0;
-        velocity = 0;
+        // Only zero velocity if it's downward
+        if (velocity < 0) velocity = 0;
       }
       data.push({ time, altitude, velocity });
       setFlightTime(time);
@@ -187,8 +188,8 @@ export default function RocketSimulation2D({
       // No need to set rocketPosition; rocket is always centered horizontally, Y is derived from altitude
       maxAltitude = Math.max(maxAltitude, altitude);
       maxVelocity = Math.max(maxVelocity, Math.abs(velocity));
-      // Stop if rocket hits ground after launch
-      if (altitude <= 0 && time > 0.1) {
+      // Stop if rocket hits ground after launch and is not moving up
+      if (altitude <= 0 && velocity <= 0 && time > 0.1) {
         setIsLaunching(false);
         onProgressUpdate('simulationRun', false);
         const results = {
