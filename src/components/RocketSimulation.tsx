@@ -58,7 +58,7 @@ export default function RocketSimulation2D({
   // Use rocket parameters for simulation with more realistic values
   const rocket = rocketDesign;
   const mass = rocket.totalMass / 1000; // convert g to kg
-  const thrust = rocket.engine.thrust ?? 0; // Use actual engine thrust value
+  const thrust = (rocket.engine.thrust ?? 0) * 4; // Scale up thrust for visible movement
   const gravity = 9.81; // m/s²
   const dragCoeff = rocket.totalDrag || 0.5;
   const crossSectionalArea = Math.PI * Math.pow((rocket.body.diameter / 1000) / 2, 2); // m²
