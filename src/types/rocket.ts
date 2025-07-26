@@ -5,6 +5,7 @@ export interface RocketPart {
   mass: number;
   drag: number;
   thrust?: number;
+  burnTime?: number;
   stability?: number;
   image?: string;
 }

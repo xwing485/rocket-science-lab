@@ -57,7 +57,8 @@ export const engines: RocketPart[] = [
     name: 'A8-3 Engine', 
     mass: 24, 
     drag: 0.1, 
-    thrust: 2.5,
+    thrust: 3.0, // avg thrust in Newtons
+    burnTime: 0.5, // seconds
     image: 'https://picsum.photos/200/150?random=3'
   },
   { 
@@ -65,7 +66,8 @@ export const engines: RocketPart[] = [
     name: 'B6-4 Engine', 
     mass: 28, 
     drag: 0.1, 
-    thrust: 5.0,
+    thrust: 4.3, // avg thrust in Newtons
+    burnTime: 0.8, // seconds
     image: 'https://picsum.photos/200/150?random=8'
   },
   { 
@@ -73,7 +75,8 @@ export const engines: RocketPart[] = [
     name: 'C6-5 Engine', 
     mass: 32, 
     drag: 0.1, 
-    thrust: 10.0,
+    thrust: 5.3, // avg thrust in Newtons
+    burnTime: 1.6, // seconds
     image: 'https://picsum.photos/200/150?random=9'
   }
 ];

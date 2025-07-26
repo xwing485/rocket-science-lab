@@ -9,7 +9,7 @@ interface RocketDesign {
   nose: { name: string; mass: number; drag: number };
   body: { diameter: number; length: number; mass: number };
   fins: { name: string; mass: number; drag: number; stability?: number };
-  engine: { name: string; mass: number; drag: number; thrust?: number };
+  engine: { name: string; mass: number; drag: number; thrust?: number; burnTime?: number };
   totalMass: number;
   totalDrag: number;
   thrust: number;
@@ -63,7 +63,8 @@ export default function RocketSimulation2D({
   const dragCoeff = rocket.totalDrag || 0.5;
   const crossSectionalArea = Math.PI * Math.pow((rocket.body.diameter / 1000) / 2, 2); // m²
   const airDensity = 1.225; // kg/m³
-  const burnTime = rocket.engine.thrust ? 1.8 : 0; // Shorter burn time for more realistic simulation
+  // Use the selected engine's burnTime if available, otherwise 0
+  const burnTime = rocket.engine.burnTime ?? 0;
 
   // Debug: Calculate weight and thrust-to-weight ratio
   const weight = mass * gravity;
