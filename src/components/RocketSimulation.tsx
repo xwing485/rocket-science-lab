@@ -63,7 +63,7 @@ export default function RocketSimulation2D({
   const dragCoeff = rocket.totalDrag || 0.5;
   const crossSectionalArea = Math.PI * Math.pow((rocket.body.diameter / 1000) / 2, 2); // m²
   const airDensity = 1.225; // kg/m³
-  const burnTime = rocket.engine.thrust ? 3.0 : 0; // Longer burn time for better visibility
+  const burnTime = rocket.engine.thrust ? 1.8 : 0; // Shorter burn time for more realistic simulation
 
   // Debug: Calculate weight and thrust-to-weight ratio
   const weight = mass * gravity;
