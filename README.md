@@ -1,8 +1,12 @@
-# Rocket Lab 2
+# Rocket Academy
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/03b6112a-1885-4fda-848a-5d1414e0794b
+
+Uploading Rocket Academy_ A Guide to Building and Simulating Model Rockets 🚀.mp4…
+
+
+**URL**: https://rocket-science-lab.lovable.app/
 
 ## How can I edit this code?
 
