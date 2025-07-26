@@ -2,12 +2,82 @@
 
 ## Project info
 
+https://www.loom.com/share/d0ebd86c25ca497ab1ccffa7c46924fc?sid=fdf1977f-7405-452c-a6b9-9d7c24a8cdd4
 
-Uploading Rocket Academy_ A Guide to Building and Simulating Model Rockets 🚀.mp4…
+# Rocket Academy  
+**Learn. Design. Launch.**  
 
+Rocket Academy is an interactive web platform that teaches students how **model rockets work**, guides them through **building their own designs**, and lets them **simulate launches with AI‑powered feedback** — all in one place.  
 
-**URL**: https://rocket-science-lab.lovable.app/
+This project was created to make rocketry **fun, accessible, and interactive** for middle school and high school students.  
 
+---
+
+## Features  
+
+### **1. Interactive Learning Modules**  
+- **Preview Quiz:** See what you already know before you start.  
+- **Tailored Lessons:** Lessons on rocketry fundamentals like forces, flight dynamics, and rocket components. *(Planned: AI‑driven personalization based on your pre‑quiz results.)*  
+- **Post‑Learning Quiz:** Check your progress and see how much you’ve improved.  
+- **Progress Tracking:** Track which lessons and modules you’ve completed.  
+
+### **2. Drag‑and‑Drop Rocket Workshop**  
+- Build rockets by dragging and dropping parts like nose cones, tubes, fins, and engines.  
+- **Custom Part Builder (Planned):** Create your own rocket parts with defined dimensions, weight, and properties.  
+- Save and organize your rocket designs with descriptions.  
+
+### **3. Flight Simulation**  
+- Launch your virtual rocket and view a **visualized flight path**.  
+- **Real‑time data:** Track altitude, velocity, thrust‑to‑weight ratio, and more.  
+- **Graph outputs:** Altitude vs. time and velocity vs. time.  
+- **Planned:** Parachute recovery simulation for more realistic flights.  
+
+### **4. AI‑Powered Rocket Coach**  
+- Get **personalized feedback** on your rocket design.  
+- Compare different designs and see how to improve performance.  
+- Receive **specific part recommendations** (e.g., switch to a lighter nose cone, use a higher‑thrust engine).  
+- **Ask custom questions** directly to the AI coach for tailored advice.  
+
+---
+
+## Why Rocket Academy?  
+Learning model rocketry online can be overwhelming. Many available resources are outdated, difficult to navigate, or too technical for beginners.  
+Rocket Academy simplifies this by:  
+- **Breaking down complex concepts** into student‑friendly lessons.  
+- **Providing instant feedback** using AI.  
+- **Combining design + simulation** so you can see how your rocket would perform before building it in real life.  
+
+---
+
+## Tech Stack  
+- **Frontend:** React (Next.js)  
+- **Backend:** Node.js / Python  
+- **Simulation Engine:** Custom simplified physics model  
+- **AI Tools:** ChatGPT, Perplexity, and other LLM‑powered agents for lesson generation and feedback  
+- **Database:** TBD  
+
+---
+
+## Roadmap  
+- [ ] Expand lesson library (beginner → advanced concepts).  
+- [ ] Add AI‑powered custom part generation.  
+- [ ] Improve flight simulation accuracy (real‑world drag coefficients, mass properties).  
+- [ ] Add parachute recovery and staging simulation.  
+- [ ] Refine AI analysis for deeper performance insights.  
+
+---
+
+## Vision  
+Rocket Academy aims to **make rocketry education approachable** for all students — whether you’ve never built a rocket before or want to test advanced designs.  
+
+By combining **interactive lessons**, **hands‑on design tools**, and **AI‑powered coaching**, we help learners go from **understanding the basics** to **designing their own high‑performing rockets** — all without the cost or risk of real‑world trial and error.  
+
+---
+
+**Author:** Alexa  
+**Project Status:** Work in Progress 🚀  
+
+## Lovable Instructions
 ## How can I edit this code?
 
 There are several ways of editing your application.
