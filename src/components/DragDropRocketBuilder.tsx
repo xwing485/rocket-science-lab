@@ -39,24 +39,24 @@ const DragDropRocketBuilder = ({ onSectionChange, onProgressUpdate, onRocketUpda
 
   const parts = {
     nose: [
-      { id: 'pointed-cone', type: 'nose' as const, name: 'Pointed Cone', mass: 4, drag: 0.4, image: '/pointed-nose-cone.png' },
-      { id: 'rounded-cone', type: 'nose' as const, name: 'Rounded Cone', mass: 5, drag: 0.5 },
-      { id: 'blunt-cone', type: 'nose' as const, name: 'Blunt Cone', mass: 5, drag: 0.7 }
+      { id: 'pointed-cone', type: 'nose' as const, name: 'Pointed Cone', mass: 10, drag: 0.4, image: '/pointed-nose-cone.png' },
+      { id: 'rounded-cone', type: 'nose' as const, name: 'Rounded Cone', mass: 12, drag: 0.5 },
+      { id: 'blunt-cone', type: 'nose' as const, name: 'Blunt Cone', mass: 11, drag: 0.7 }
     ],
     body: [
-      { id: 'standard-tube', type: 'body' as const, name: 'Standard Tube', mass: 8, drag: 0.3 },
-      { id: 'wide-tube', type: 'body' as const, name: 'Wide Tube', mass: 10, drag: 0.4 },
-      { id: 'narrow-tube', type: 'body' as const, name: 'Narrow Tube', mass: 6, drag: 0.25 }
+      { id: 'standard-tube', type: 'body' as const, name: 'Standard Tube', mass: 20, drag: 0.3 },
+      { id: 'wide-tube', type: 'body' as const, name: 'Wide Tube', mass: 25, drag: 0.4 },
+      { id: 'narrow-tube', type: 'body' as const, name: 'Narrow Tube', mass: 15, drag: 0.25 }
     ],
     fins: [
-      { id: 'standard-fins', type: 'fins' as const, name: 'Standard Fins', mass: 3, drag: 0.2, stability: 2.0 },
-      { id: 'large-fins', type: 'fins' as const, name: 'Large Fins', mass: 5, drag: 0.3, stability: 3.0 },
-      { id: 'swept-fins', type: 'fins' as const, name: 'Swept Fins', mass: 4, drag: 0.25, stability: 2.5 }
+      { id: 'standard-fins', type: 'fins' as const, name: 'Standard Fins', mass: 15, drag: 0.2, stability: 2.0 },
+      { id: 'large-fins', type: 'fins' as const, name: 'Large Fins', mass: 22, drag: 0.3, stability: 3.0 },
+      { id: 'swept-fins', type: 'fins' as const, name: 'Swept Fins', mass: 18, drag: 0.25, stability: 2.5 }
     ],
     engine: [
-      { id: 'a8-engine', type: 'engine' as const, name: 'A8-3 Engine', mass: 7, drag: 0.1, thrust: 3.0 },
-      { id: 'b6-engine', type: 'engine' as const, name: 'B6-4 Engine', mass: 7, drag: 0.1, thrust: 4.3 },
-      { id: 'c6-engine', type: 'engine' as const, name: 'C6-5 Engine', mass: 7, drag: 0.1, thrust: 5.3 }
+      { id: 'a8-engine', type: 'engine' as const, name: 'A8-3 Engine', mass: 24, drag: 0.1, thrust: 2.5 },
+      { id: 'b6-engine', type: 'engine' as const, name: 'B6-4 Engine', mass: 28, drag: 0.1, thrust: 5.0 },
+      { id: 'c6-engine', type: 'engine' as const, name: 'C6-5 Engine', mass: 32, drag: 0.1, thrust: 10.0 }
     ]
   };
 

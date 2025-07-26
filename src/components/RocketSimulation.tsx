@@ -63,8 +63,6 @@ export default function RocketSimulation2D({
   const dragCoeff = rocket.totalDrag || 0.5;
   const crossSectionalArea = Math.PI * Math.pow((rocket.body.diameter / 1000) / 2, 2); // m²
   const airDensity = 1.225; // kg/m³
-  // Use the selected engine's burnTime if available, otherwise 0
-  const burnTime = rocket.engine.burnTime ?? 0;
 
   // Debug: Calculate weight and thrust-to-weight ratio
   const weight = mass * gravity;
@@ -161,13 +159,12 @@ export default function RocketSimulation2D({
     let maxAltitude = 0;
     let maxVelocity = 0;
     const dt = 1 / 60; // 60 FPS
-    // Start at pad
-    // No need to set rocketPosition; rocket is always centered horizontally, Y is derived from altitude
     // Animation loop
     const update = () => {
       // Forces
       const Fg = mass * gravity;
-      const Fthrust = time < burnTime ? thrust : 0;
+      // Thrust for first 0.8s (approximate for all engines)
+      const Fthrust = time < 0.8 ? thrust : 0;
       const Fdrag = 0.5 * airDensity * velocity * velocity * dragCoeff * crossSectionalArea * (velocity > 0 ? -1 : 1);
       // Net force and acceleration
       const Fnet = Fthrust + Fdrag - Fg;
@@ -185,11 +182,10 @@ export default function RocketSimulation2D({
       data.push({ time, altitude, velocity });
       setFlightTime(time);
       setFlightData([...data]);
-      // No need to set rocketPosition; rocket is always centered horizontally, Y is derived from altitude
       maxAltitude = Math.max(maxAltitude, altitude);
       maxVelocity = Math.max(maxVelocity, Math.abs(velocity));
-      // Stop if rocket hits ground after launch and is not moving up
-      if (altitude <= 0 && velocity <= 0 && time > 0.1) {
+      // Stop if rocket hits ground after launch
+      if (altitude <= 0 && time > 0.1) {
         setIsLaunching(false);
         onProgressUpdate('simulationRun', false);
         const results = {
@@ -291,7 +287,7 @@ export default function RocketSimulation2D({
               {/* Rocket (base sits flush on ground and moves with simulation) */}
             <g transform={`translate(${svgWidth/2 - bodyWidth/2}, ${rocketWorldY})`}>
                 {/* Engine flame (only during powered ascent) */}
-                {isLaunching && flightTime <= burnTime && (
+                {isLaunching && flightTime <= 0.8 && (
                   <ellipse cx={bodyWidth/2} cy={rocketHeight + engineHeight/2} rx={10} ry={8} fill="#fff7ae" opacity="0.7" />
                 )}
                 {/* Engine */}
